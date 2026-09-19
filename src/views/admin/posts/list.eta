@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Posts · Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <header>
+      <h1>Posts</h1>
+      <a href="/admin/posts/new">Nuevo post</a>
+      <form method="post" action="/admin/logout">
+        <button type="submit">Salir</button>
+      </form>
+    </header>
+    <main>
+      <table>
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Espacio</th>
+            <th>Estado</th>
+            <th>Actualizado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% it.items.forEach(function(item) { %>
+          <tr>
+            <td><a href="/admin/posts/<%= item.id %>"><%= item.title %></a></td>
+            <td><%= item.spaceName %></td>
+            <td><%= item.status %></td>
+            <td><%= item.updatedAt.toISOString() %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </main>
+  </body>
+</html>

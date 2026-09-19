@@ -1,9 +1,13 @@
-import { test } from "node:test";
+import { test, after } from "node:test";
 import assert from "node:assert/strict";
 
 process.env.BASE_DOMAIN ??= "localhost";
+process.env.DATABASE_URL ??= "postgres://multiblog:dev@localhost:5433/multiblog";
 
 const { buildApp } = await import("../../src/app.js");
+const { closeDb } = await import("../../src/db/client.js");
+
+after(closeDb);
 
 test("GET /hola en nutricion.localhost devuelve el post de nutrición", async () => {
   const app = await buildApp();

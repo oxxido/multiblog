@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title><%= it.post ? "Editar post" : "Nuevo post" %> · Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <header>
+      <a href="/admin/posts">← Posts</a>
+      <% if (it.post) { %>
+      <span>Estado: <%= it.post.status %></span>
+      <% } %>
+    </header>
+    <main>
+      <form method="post" action="<%= it.action %>">
+        <label>
+          Espacio
+          <select name="spaceId" required>
+            <% it.spaceOptions.forEach(function(space) { %>
+            <option value="<%= space.id %>" <%= it.post && it.post.spaceId === space.id ? "selected" : "" %>>
+              <%= space.name %>
+            </option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          Slug
+          <input type="text" name="slug" required value="<%= it.post ? it.post.slug : "" %>" />
+        </label>
+        <label>
+          Título
+          <input type="text" name="title" required value="<%= it.post ? it.post.title : "" %>" />
+        </label>
+        <label>
+          Extracto
+          <input type="text" name="excerpt" value="<%= it.post && it.post.excerpt ? it.post.excerpt : "" %>" />
+        </label>
+        <label>
+          Markdown
+          <textarea name="bodyMd" rows="20" required><%= it.post ? it.post.bodyMd : "" %></textarea>
+        </label>
+        <button type="submit">Guardar</button>
+      </form>
+
+      <% if (it.post) { %>
+      <form method="post" action="/admin/posts/<%= it.post.id %>/publish">
+        <button type="submit">Publicar</button>
+      </form>
+      <form method="post" action="/admin/posts/<%= it.post.id %>/delete">
+        <button type="submit">Borrar</button>
+      </form>
+      <% } %>
+    </main>
+  </body>
+</html>

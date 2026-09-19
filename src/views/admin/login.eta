@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Ingresar · Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <main>
+      <h1>Ingresar</h1>
+      <% if (it.error) { %>
+      <p>Email o contraseña incorrectos.</p>
+      <% } %>
+      <form method="post" action="/admin/login">
+        <label>
+          Email
+          <input type="email" name="email" required autofocus />
+        </label>
+        <label>
+          Contraseña
+          <input type="password" name="password" required />
+        </label>
+        <button type="submit">Ingresar</button>
+      </form>
+    </main>
+  </body>
+</html>
