@@ -8,6 +8,7 @@ import {
   unique,
   index,
   pgEnum,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 export const postStatus = pgEnum("post_status", ["draft", "scheduled", "published"]);
@@ -22,6 +23,7 @@ export const spaces = pgTable("spaces", {
   accentColor: text("accent_color"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   archivedAt: timestamp("archived_at", { withTimezone: true }),
+  coverMediaId: uuid("cover_media_id").references((): AnyPgColumn => media.id),
 });
 
 export const media = pgTable("media", {
