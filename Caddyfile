@@ -1,0 +1,15 @@
+# S1: sin dominio real todavía, así que sin TLS (ver docs/DECISIONS.md D3).
+# `http://` fuerza HTTP plano y evita que Caddy intente ACME contra *.localhost.
+http://nutricion.localhost {
+	reverse_proxy app:3000
+}
+
+http://ideas.localhost {
+	reverse_proxy app:3000
+}
+
+# Sin esto, Caddy responde 200 vacío para cualquier Host sin bloque propio
+# en vez de 404 — necesitamos un catch-all explícito.
+:80 {
+	respond 404
+}

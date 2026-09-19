@@ -11,6 +11,7 @@
 | D2 | Servidor de despliegue de S1 en adelante: **esta máquina**, administrada con dockge. No se provisiona VPS nuevo. | S1 | `PLAN.md` S1 ("servidor real") |
 | D3 | Sin dominio real todavía. S1 corre sobre `*.localhost` en HTTP plano; el certificado wildcard vía DNS-01 queda **pendiente explícito** hasta tener un dominio real apuntado a la máquina. No se marca como criterio de aceptación cumplido mientras tanto. | S1 | `PLAN.md` S1 (criterio de aceptación "certificado válido") |
 | D4 | Espacios de prueba de S1: **`nutricion` e `ideas`** (de los tres definidos en `Design.md`), no genéricos `a`/`b`. | S1 | `PLAN.md` S1 (ejemplos `a.midominio.com`/`b.midominio.com`) |
+| D5 | La regla "el render de Markdown ocurre al guardar, nunca en el manejador de ruta pública" (`.claude/rules/Markdown.md`) no aplica todavía en S1: no hay guardado ni base de datos, sólo archivos `.md` en disco. La ruta `/{slug}` lee y renderiza al servir la petición. La regla entra en vigencia recién en S2, cuando exista un `body_html` cacheado que renderizar al guardar. | S1 | `.claude/rules/Markdown.md` (alcance temporal, no la regla en sí) |
 
 ---
 
@@ -46,3 +47,15 @@ credenciales DNS-01), no un cambio de código de aplicación.
 de los tres espacios reales definidos en `Design.md`, con contenido mínimo de
 prueba — el objetivo de S1 sigue siendo probar el pipeline, no publicar
 contenido real.
+
+### D5 — Render en la ruta pública, sólo durante S1
+
+`.claude/rules/Markdown.md` fija que el HTML se genera al guardar el post, no
+al servir la petición, porque asume un flujo de guardado con `body_html`
+cacheado en base — ese flujo no existe todavía en S1 (`docs/slices/01.md`
+excluye explícitamente base de datos y admin de esta corrida). La ruta
+`/{slug}` de S1 lee el `.md` del disco y lo pasa por el pipeline en cada
+petición, tal como describe la tarea T4 del desglose de la slice. Esto no es
+una excepción a la regla: es que la regla habla de un paso ("guardar") que
+todavía no existe. S2 introduce Postgres y el CRUD de posts; ahí el render
+pasa a ocurrir al guardar y esta ruta deja de tocar el pipeline directamente.

@@ -6,18 +6,27 @@
 
 ## Slice hecha
 
-Ninguna todavía. El proyecto está en preparación: spec, plan y diseño cerrados,
-sin código propio escrito.
+**S1 — Un post, un subdominio, una URL.** Implementada y verificada en esta
+máquina con `docker compose build && docker compose up`, sobre `*.localhost`
+sin TLS (ver `docs/DECISIONS.md` D3). Criterio de aceptación de
+`docs/slices/01.md` §4 confirmado con curl:
+
+```
+GET http://nutricion.localhost/hola   → 200, HTML del md de nutrición
+GET http://ideas.localhost/hola       → 200, HTML del md de ideas, distinto
+GET http://otroespacio.localhost/     → 404
+```
+
+Pendiente explícito, no parte de esta corrida: certificado wildcard vía
+DNS-01 (D3) — requiere dominio real. Falta que el stack se dé de alta en
+dockge en esta máquina; el `docker-compose.yml` está listo para eso.
+
+`pnpm lint && pnpm typecheck && pnpm test` en verde.
 
 ## Slice actual
 
-**S1 — Un post, un subdominio, una URL.** Planificada en detalle en
-`docs/slices/01.md`, con las decisiones de esta corrida (Caddy en vez de
-Traefik, sin dominio real todavía → `*.localhost` sin TLS, espacios de prueba
-`nutricion`/`ideas`). Ver `docs/DECISIONS.md`.
-
-Pendiente de empezar la implementación: T1 (scaffolding Node + TS + Fastify +
-Eta).
+Ninguna abierta. Próximo paso: dar de alta el stack en dockge y, con eso
+confirmado funcionando, arrancar S2.
 
 ## Próxima
 
