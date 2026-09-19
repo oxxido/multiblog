@@ -16,6 +16,9 @@
 | D7 | El TLS público y la terminación real de tráfico de internet **no las hace el Caddy de Multiblog**, las hace el Caddy de un Raspberry Pi aparte (DHCP + Pi-hole + Caddy) que ya es el borde de la red doméstica: el port-forward del router apunta ahí, y ese Caddy reenvía por `reverse_proxy` a los servicios internos por IP, incluida esta máquina (`192.168.1.45`). Esto corrige el supuesto de D1 de que el Caddy del `docker-compose.yml` de Multiblog haría su propio DNS-01 de cara a internet. | — | D1 |
 | D8 | El esquema Drizzle de S2 incorpora ya los campos de `docs/I18N.md` §3 (`lang`, `translation_group_id`, `source_post_id`, `translated_at`, `source_updated_at` en `posts`; `lang` en `post_slugs`; `UNIQUE (space_id, lang, slug)` en vez de `UNIQUE (space_id, slug)`; `name_en`/`slug_en` en `categories`; `name_en` en `tags`), aunque `docs/slices/02.md` T2 sólo pedía el esquema de `SPEC.md` §6. `I18N.md` §7 es explícito: "S2 — el esquema incorpora lang, translation_group_id... Esto es lo único que no se puede posponer sin pagar una migración de URLs". No hay UI de traducción todavía, sólo la forma de los datos. | S2 | `docs/slices/02.md` T2 |
 | D9 | Driver de Postgres para Drizzle: **`postgres`** (promesas nativas), no `pg`, tal como proponía `docs/slices/02.md` §0. | S2 | `docs/slices/02.md` §0 |
+| D10 | Flujo de git por slice: rama nueva antes de empezar a implementar, commits cuando corresponda durante el trabajo, y push al cerrar la slice (si hace falta) con link y mensaje de PR propuestos al usuario — el PR mismo no se crea sin que él lo pida. | — | `CLAUDE.md` "Cómo trabajar" |
+| D11 | El servicio `caddy` del `docker-compose.yml` de Multiblog se vuelve opcional (`profiles: ["local-caddy"]`), no arranca en `docker compose up` normal. `app` publica su puerto (`3000:3000`) al host. Esto materializa lo que D7 ya preveía: en el redeploy real de S2 en dockge, el borde es el Caddy del Pi, que llega a esta máquina por IP:puerto directo — el Caddy propio quedaba de más ahí y además rompía el arranque en dockge (bind mount de `Caddyfile` sobre un directorio fantasma). El Caddy local se sigue usando para pruebas completas contra `*.localhost` con `docker compose --profile local-caddy up`. | S2 (redeploy) | D7 |
+| D12 | Dev y prod corren en la misma máquina (D2) como procesos separados, en puertos fijos distintos: **prod** (contenedor `app` de `docker-compose.yml`) en `3000`; **dev** (`pnpm dev` suelto con `tsx`) en `3100`, vía `PORT` en `.env.local`. No es una convención de código, es sólo asignación manual para no pisarse en esta máquina — si se agrega otro entorno (staging, etc.) le toca otro puerto libre. | — | D2, D11 |
 
 ---
 
@@ -141,3 +144,14 @@ forma de los datos.
 `docs/slices/02.md` §0 dejaba `pg` anotado como alternativa a confirmar. Se
 usa `postgres` (promesas nativas), como proponía el desglose, sin razón
 adicional más que evitar una capa de callbacks sobre Drizzle.
+
+### D10 — Flujo de git por slice
+
+Antes de empezar a implementar una slice se crea una rama nueva (no se
+trabaja directo sobre `master`). Durante la implementación se commitea
+cuando tiene sentido — no todo al final en un commit gigante — siguiendo el
+formato de mensajes ya fijado en `CLAUDE.md` (`S{n}: descripción en
+imperativo`). Al cerrar la slice, si hace falta subir la rama, se hace push
+y se le propone al usuario el link para abrir el pull request junto con un
+mensaje de PR sugerido; abrir el PR en sí (o mergear) es una decisión suya,
+no se hace automáticamente.

@@ -5,6 +5,8 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    ports:
+      - "3000:3000"
     environment:
       BASE_DOMAIN: localhost
       PORT: "3000"
@@ -42,9 +44,14 @@ services:
       timeout: 5s
       retries: 10
 
+  # Opcional: sólo para pruebas locales completas contra *.localhost (D3).
+  # En producción el borde es el Caddy del Pi (D7), que llega acá por
+  # IP:puerto directo — este servicio no arranca salvo que se pida
+  # explícitamente con `docker compose --profile local-caddy up`.
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    profiles: ["local-caddy"]
     depends_on:
       - app
     ports:
