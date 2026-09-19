@@ -41,16 +41,12 @@ traducción todavía.
 `(space_id, lang, status, published_at)` + `onDelete: cascade` en las
 tablas de unión) generada y aplicada contra el Postgres de dev.
 
-**Pendiente, no bloqueante para dar la slice por cerrada:**
+Redeploy en `~/docker/stacks/multiblog-prod/` (dockge) confirmado: el stack
+de producción de esta máquina corre con los servicios `postgres` y
+`migrate` nuevos.
 
-- **Redeploy en `~/docker/stacks/multiblog-prod/` (dockge):** el compose y
-  el Dockerfile nuevos (servicios `postgres` y `migrate`) están escritos y
-  probados localmente, pero no se tocó el stack de producción de esta
-  máquina — eso implica `git pull` + variables de entorno reales en esa
-  carpeta, y se dejó para que el usuario lo revise antes de aplicarlo.
+## Ahora
 
-## Próxima
-
-S3 — Espacios reales (CRUD de espacios, resolución de `Host` contra la
-tabla `spaces`). No arranca hasta que el redeploy de S2 esté confirmado en
-esta máquina.
+S3 — Espacios reales, según `docs/slices/03.md` (T1–T5): resolución de
+`Host` contra la tabla `spaces`, CRUD de espacios desde el admin, índice de
+espacio paginado, categorías por espacio y su índice público.
