@@ -15,6 +15,13 @@
       "when": 1789828061197,
       "tag": "0001_thin_microchip",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789851289383,
+      "tag": "0002_tan_drax",
+      "breakpoints": true
     }
   ]
 }
