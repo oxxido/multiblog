@@ -12,6 +12,10 @@
 | D3 | Sin dominio real todavía. S1 corre sobre `*.localhost` en HTTP plano; el certificado wildcard vía DNS-01 queda **pendiente explícito** hasta tener un dominio real apuntado a la máquina. No se marca como criterio de aceptación cumplido mientras tanto. | S1 | `PLAN.md` S1 (criterio de aceptación "certificado válido") |
 | D4 | Espacios de prueba de S1: **`nutricion` e `ideas`** (de los tres definidos en `Design.md`), no genéricos `a`/`b`. | S1 | `PLAN.md` S1 (ejemplos `a.midominio.com`/`b.midominio.com`) |
 | D5 | La regla "el render de Markdown ocurre al guardar, nunca en el manejador de ruta pública" (`.claude/rules/Markdown.md`) no aplica todavía en S1: no hay guardado ni base de datos, sólo archivos `.md` en disco. La ruta `/{slug}` lee y renderiza al servir la petición. La regla entra en vigencia recién en S2, cuando exista un `body_html` cacheado que renderizar al guardar. | S1 | `.claude/rules/Markdown.md` (alcance temporal, no la regla en sí) |
+| D6 | Dominio tentativo: **`divermente.es`** (no `.com`, que era el placeholder de `Design.md`). No confirmado ni apuntado por DNS todavía — sigue sin cambiar nada de D3: sin dominio apuntado, sin TLS real. | — | `Design.md` (placeholder `divermente.com`), D3 |
+| D7 | El TLS público y la terminación real de tráfico de internet **no las hace el Caddy de Multiblog**, las hace el Caddy de un Raspberry Pi aparte (DHCP + Pi-hole + Caddy) que ya es el borde de la red doméstica: el port-forward del router apunta ahí, y ese Caddy reenvía por `reverse_proxy` a los servicios internos por IP, incluida esta máquina (`192.168.1.45`). Esto corrige el supuesto de D1 de que el Caddy del `docker-compose.yml` de Multiblog haría su propio DNS-01 de cara a internet. | — | D1 |
+| D8 | El esquema Drizzle de S2 incorpora ya los campos de `docs/I18N.md` §3 (`lang`, `translation_group_id`, `source_post_id`, `translated_at`, `source_updated_at` en `posts`; `lang` en `post_slugs`; `UNIQUE (space_id, lang, slug)` en vez de `UNIQUE (space_id, slug)`; `name_en`/`slug_en` en `categories`; `name_en` en `tags`), aunque `docs/slices/02.md` T2 sólo pedía el esquema de `SPEC.md` §6. `I18N.md` §7 es explícito: "S2 — el esquema incorpora lang, translation_group_id... Esto es lo único que no se puede posponer sin pagar una migración de URLs". No hay UI de traducción todavía, sólo la forma de los datos. | S2 | `docs/slices/02.md` T2 |
+| D9 | Driver de Postgres para Drizzle: **`postgres`** (promesas nativas), no `pg`, tal como proponía `docs/slices/02.md` §0. | S2 | `docs/slices/02.md` §0 |
 
 ---
 
@@ -58,6 +62,54 @@ de los tres espacios reales definidos en `Design.md`, con contenido mínimo de
 prueba — el objetivo de S1 sigue siendo probar el pipeline, no publicar
 contenido real.
 
+### D6 — Dominio tentativo: divermente.es
+
+`Design.md` usaba `divermente.com` como marca, sin confirmar ni apuntar por
+DNS. El dominio que tentativamente se va a comprar/usar es **`divermente.es`**
+(nótese el cambio de TLD). Sigue siendo tentativo: no está comprado ni
+apuntado todavía, así que D3 no cambia — S1 y S2 siguen validándose contra
+`*.localhost`. Este dato se anota para que cuando haya que decidir el bloque
+wildcard del Pi (D7) y las credenciales DNS-01, ya esté claro qué dominio va.
+
+### D7 — El Pi termina TLS de internet, no el Caddy de Multiblog
+
+Al conversar el despliegue real apareció un dato que D1 no tenía: esta
+máquina de desarrollo/release nunca recibe tráfico de internet directo. El
+que lo recibe es un Raspberry Pi aparte (DHCP + Pi-hole + Caddy) — el
+port-forward del router (80/443) apunta a él, y su Caddyfile ya tiene un
+bloque `reverse_proxy` estático por servicio hacia las IPs internas, por
+ejemplo:
+
+```
+catalogo.calle11.es {
+        reverse_proxy 192.168.1.45:8000
+}
+```
+
+Esta máquina es `192.168.1.45`. Cualquier dominio de Multiblog (`divermente.es`,
+D6) va a tener que pasar primero por ese Caddy del Pi para llegar acá — el
+Caddy que define el `docker-compose.yml` de Multiblog (D1) nunca ve tráfico
+de internet directo, sólo lo que el Pi le reenvíe.
+
+**Consecuencia práctica, para cuando haya dominio real:**
+
+- el wildcard de espacios (`*.divermente.es`) se resuelve con **un solo
+  bloque estático** en el Caddyfile del Pi, igual de manual que los que ya
+  tiene por servicio — no con la API de administración de Caddy, no
+  dinámico por espacio. Eso mantiene el invariante 7 (crear un espacio no
+  requiere redeploy) porque quién resuelve el espacio dentro de ese wildcard
+  es `middleware/space.ts` contra la tabla `spaces`, no el Caddyfile del Pi;
+- ese bloque wildcard necesita DNS-01 (un wildcard no se emite por HTTP-01),
+  así que las credenciales de API del proveedor de DNS van en el Caddy del
+  **Pi**, no en el de Multiblog;
+- el Caddy del `docker-compose.yml` de Multiblog (D1) deja de ser el que
+  hace TLS de cara a internet. Sigue existiendo para el reverse-proxy interno
+  hacia el proceso Node, pero sin DNS-01 propio — eso pasa a estar de más si
+  el Pi ya termina TLS antes de reenviar.
+
+Nada de esto se implementa todavía: sigue pendiente de dominio real, igual
+que D3. Se deja anotado para no perder la conversación.
+
 ### D5 — Render en la ruta pública, sólo durante S1
 
 `.claude/rules/Markdown.md` fija que el HTML se genera al guardar el post, no
@@ -69,3 +121,23 @@ petición, tal como describe la tarea T4 del desglose de la slice. Esto no es
 una excepción a la regla: es que la regla habla de un paso ("guardar") que
 todavía no existe. S2 introduce Postgres y el CRUD de posts; ahí el render
 pasa a ocurrir al guardar y esta ruta deja de tocar el pipeline directamente.
+
+### D8 — Esquema de S2 incluye i18n desde ya
+
+`docs/slices/02.md` T2 pedía sólo el esquema de `SPEC.md` §6. Pero
+`docs/I18N.md` §7 dice explícitamente que S2 tiene que incorporar `lang`,
+`translation_group_id` y las claves únicas nuevas, sin esperar a la slice de
+traducción (S7): es la única parte de i18n que no se puede posponer sin
+pagar una migración de URLs después de indexado. Se resolvió esta
+contradicción entre documentos a favor de `I18N.md`: el esquema de `posts` y
+`post_slugs` de S2 ya tiene la forma final (`lang`, `translation_group_id`,
+`source_post_id`, `translated_at`, `source_updated_at`,
+`UNIQUE (space_id, lang, slug)`), y `categories`/`tags` ya tienen sus
+columnas `_en`. No hay ninguna UI ni lógica de traducción todavía — sólo la
+forma de los datos.
+
+### D9 — Driver de Postgres: `postgres`
+
+`docs/slices/02.md` §0 dejaba `pg` anotado como alternativa a confirmar. Se
+usa `postgres` (promesas nativas), como proponía el desglose, sin razón
+adicional más que evitar una capa de callbacks sobre Drizzle.
