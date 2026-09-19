@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Categorías · Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <header>
+      <h1>Categorías</h1>
+      <a href="/admin/posts">← Posts</a>
+      <a href="/admin/categorias/new">Nueva categoría</a>
+    </header>
+    <main>
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Espacio</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% it.items.forEach(function(item) { %>
+          <tr>
+            <td><a href="/admin/categorias/<%= item.id %>"><%= item.name %></a></td>
+            <td><%= item.spaceName %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title><%= it.heading %> · <%= it.spaceName %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <header>
+      <p><%= it.spaceName %></p>
+      <h1><%= it.heading %></h1>
+    </header>
+    <main>
+      <ul>
+        <% it.items.forEach(function(post) { %>
+        <li>
+          <a href="/<%= post.slug %>"><%= post.title %></a>
+          <% if (post.excerpt) { %>
+          <p><%= post.excerpt %></p>
+          <% } %>
+        </li>
+        <% }) %>
+      </ul>
+
+      <nav>
+        <% if (it.page > 1) { %>
+        <a href="<%= it.basePath %>?page=<%= it.page - 1 %>">← Anterior</a>
+        <% } %>
+        <% if (it.hasNext) { %>
+        <a href="<%= it.basePath %>?page=<%= it.page + 1 %>">Siguiente →</a>
+        <% } %>
+      </nav>
+    </main>
+  </body>
+</html>

@@ -18,9 +18,23 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Los formularios del admin no llevan JS (invariante 3): se envían como
   // application/x-www-form-urlencoded, que Fastify no parsea por defecto.
+  // Object.fromEntries perdería todos los valores salvo el último de un
+  // campo repetido (checkboxes de categorías, T4 de docs/slices/03.md), así
+  // que un campo repetido se agrupa en un array.
   app.addContentTypeParser("application/x-www-form-urlencoded", { parseAs: "string" }, (_request, body, done) => {
     try {
-      done(null, Object.fromEntries(new URLSearchParams(body as string)));
+      const fields: Record<string, string | string[]> = {};
+      for (const [key, value] of new URLSearchParams(body as string)) {
+        const existing = fields[key];
+        if (existing === undefined) {
+          fields[key] = value;
+        } else if (Array.isArray(existing)) {
+          existing.push(value);
+        } else {
+          fields[key] = [existing, value];
+        }
+      }
+      done(null, fields);
     } catch (error) {
       done(error as Error, undefined);
     }

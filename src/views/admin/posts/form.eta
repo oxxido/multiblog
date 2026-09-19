@@ -40,6 +40,20 @@
           Markdown
           <textarea name="bodyMd" rows="20" required><%= it.post ? it.post.bodyMd : "" %></textarea>
         </label>
+        <fieldset>
+          <legend>Categorías</legend>
+          <% it.categoryOptions.forEach(function(category) { %>
+          <label>
+            <input
+              type="checkbox"
+              name="categoryIds"
+              value="<%= category.id %>"
+              <%= it.post && it.post.categoryIds.includes(category.id) ? "checked" : "" %>
+            />
+            <%= category.name %> (<%= category.spaceName %>)
+          </label>
+          <% }) %>
+        </fieldset>
         <button type="submit">Guardar</button>
       </form>
 

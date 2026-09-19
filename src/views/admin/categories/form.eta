@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title><%= it.category ? "Editar categoría" : "Nueva categoría" %> · Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <header>
+      <a href="/admin/categorias">← Categorías</a>
+    </header>
+    <main>
+      <form method="post" action="<%= it.action %>">
+        <% if (it.category) { %>
+        <p>Espacio: <%= it.category.spaceName %></p>
+        <% } else { %>
+        <label>
+          Espacio
+          <select name="spaceId" required>
+            <% it.spaceOptions.forEach(function(space) { %>
+            <option value="<%= space.id %>"><%= space.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <% } %>
+        <label>
+          Slug
+          <input type="text" name="slug" required value="<%= it.category ? it.category.slug : "" %>" />
+        </label>
+        <label>
+          Nombre
+          <input type="text" name="name" required value="<%= it.category ? it.category.name : "" %>" />
+        </label>
+        <label>
+          Descripción
+          <input type="text" name="description" value="<%= it.category && it.category.description ? it.category.description : "" %>" />
+        </label>
+        <button type="submit">Guardar</button>
+      </form>
+
+      <% if (it.category) { %>
+      <form method="post" action="/admin/categorias/<%= it.category.id %>/delete">
+        <button type="submit">Borrar</button>
+      </form>
+      <% } %>
+    </main>
+  </body>
+</html>
