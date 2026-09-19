@@ -6,10 +6,11 @@
 
 ## Slice hecha
 
-**S1 — Un post, un subdominio, una URL.** Implementada y verificada en esta
-máquina con `docker compose build && docker compose up`, sobre `*.localhost`
-sin TLS (ver `docs/DECISIONS.md` D3). Criterio de aceptación de
-`docs/slices/01.md` §4 confirmado con curl:
+**S1 — Un post, un subdominio, una URL.** Desplegada y funcionando en esta
+máquina, dada de alta en dockge (`~/docker/stacks/multiblog-prod/`, repo
+clonado completo ahí), sobre `*.localhost` sin TLS (ver `docs/DECISIONS.md`
+D3). Criterio de aceptación de `docs/slices/01.md` §4 confirmado con curl
+contra el stack real:
 
 ```
 GET http://nutricion.localhost/hola   → 200, HTML del md de nutrición
@@ -18,15 +19,13 @@ GET http://otroespacio.localhost/     → 404
 ```
 
 Pendiente explícito, no parte de esta corrida: certificado wildcard vía
-DNS-01 (D3) — requiere dominio real. Falta que el stack se dé de alta en
-dockge en esta máquina; el `docker-compose.yml` está listo para eso.
+DNS-01 (D3) — requiere dominio real.
 
 `pnpm lint && pnpm typecheck && pnpm test` en verde.
 
 ## Slice actual
 
-Ninguna abierta. Próximo paso: dar de alta el stack en dockge y, con eso
-confirmado funcionando, arrancar S2.
+Ninguna abierta. S1 cerrada. Próximo paso: arrancar S2.
 
 ## Próxima
 
