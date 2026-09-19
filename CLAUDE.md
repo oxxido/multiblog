@@ -10,7 +10,18 @@ admin.midominio.com      panel único
 
 Un autor. Un proceso Node. Una base de datos. Sin SPA.
 
-Los documentos de referencia están en `docs/`: `SPEC.md`, `PLAN.md`, `DESIGN.md`. Ante una duda de producto, arquitectura o diseño, la respuesta está ahí. Si no está, preguntá — no la inventes.
+**Este archivo no se vuelve a sobreescribir de acá en adelante.** Si en algún
+momento parece necesario editarlo (nuevo invariante, cambio de stack, cambio
+de estructura), no lo edites: decíselo al usuario y recomendale que lo haga a
+mano él. Las decisiones nuevas van en `docs/DECISIONS.md`, no acá.
+
+Los documentos de referencia están en `docs/`: `SPEC.md`, `PLAN.md`, `Design.md`. Ante una duda de producto, arquitectura o diseño, la respuesta está ahí. Si no está, preguntá — no la inventes.
+
+`docs/STATUS.md` tiene el estado actual: qué slice está hecha y cuál se está
+haciendo ahora. `docs/DECISIONS.md` tiene toda decisión nueva que modifica o
+precisa algo de `SPEC.md`/`PLAN.md` (como cambios de stack o de alcance de una
+slice puntual). Actualizá ambos al cerrar o arrancar una slice, o al tomar una
+decisión de ese tipo — no dejes que se desactualicen.
 
 ---
 
