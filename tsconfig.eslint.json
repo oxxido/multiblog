@@ -5,5 +5,5 @@
     "noEmit": true,
     "allowJs": true
   },
-  "include": ["src", "tests", "*.config.js"]
+  "include": ["src", "tests", "*.config.js", "drizzle.config.ts"]
 }
