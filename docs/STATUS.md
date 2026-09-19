@@ -73,6 +73,10 @@ carpeta) queda para que el usuario lo decida, igual que quedó anotado en S2.
 
 ## Próxima
 
-S4 — Editor visual (TipTap), la slice más grande: conversión bidireccional
-TipTap ↔ Markdown, alternar visual/crudo sin perder nada, guardado
-automático de borrador.
+S4 — Implementación del diseño existente (`docs/Design.md` +
+`docs/UI_mockups/`) sobre el shell de espacio y de post ya servidos por
+S1-S3. Desglose en definición, ver `docs/slices/04.md` cuando exista.
+
+Después: S5 — Editor visual (TipTap), la slice más grande: conversión
+bidireccional TipTap ↔ Markdown, alternar visual/crudo sin perder nada,
+guardado automático de borrador.
