@@ -49,6 +49,8 @@ No negociables. Romper una de estas es un bug de arquitectura, no una preferenci
 6. **Un bloque rico que no sobrevive el round-trip `md → tiptap → md` no se mergea.** Un test por bloque, sin excepción.
 7. **Los espacios se resuelven contra la base, no contra una lista en código.** Crear un espacio no requiere redeploy.
 8. **Ningún cambio de esquema sin migración versionada de Drizzle.** Nada de `push` contra la base de desarrollo.
+9. NUNCA bajo ningun concepto salgas de la carpeta actual de desarrollo, si necesitas correr algun comando en otra carpeta, lo consultas conmigo
+10. Nunca hagas rm -rf, si necesitas eliminar una carpeta me preguntas.
 
 ---
 
