@@ -17,7 +17,7 @@ Sin base de datos. Dos archivos `.md` en disco, uno por espacio.
 - pipeline `remark → rehype → sanitize → shiki` → HTML
 - middleware de resolución de espacio por `Host`
 - ruta `/{slug}` que renderiza el `.md` correspondiente
-- Docker Compose con Traefik y certificado wildcard vía DNS-01
+- Docker Compose con Caddy y certificado wildcard vía DNS-01
 - desplegado en el servidor real, con dos subdominios respondiendo
 
 **Aceptación**

@@ -21,7 +21,7 @@ Node 22 · TypeScript · Fastify · Postgres 16 · Drizzle
 Eta (plantillas de servidor)
 unified/remark/rehype + remark-directive + rehype-sanitize + shiki
 TipTap (sólo en admin)
-Docker Compose + Traefik
+Docker Compose + Caddy
 ```
 
 ---

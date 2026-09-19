@@ -123,7 +123,7 @@ unified / remark / rehype  pipeline Markdown → HTML
   + rehype-sanitize      obligatorio, incluso siendo autor único
   + shiki                resaltado de código
 TipTap                   editor visual, isla JS sólo en admin
-Traefik                  proxy, TLS wildcard
+Caddy                    proxy, TLS wildcard
 Docker Compose           despliegue
 ```
 
@@ -172,7 +172,7 @@ ADMIN — admin.midominio.com
 
 ### TLS wildcard — el detalle que muerde
 
-Un certificado `*.midominio.com` **no se puede emitir con el desafío HTTP-01**. Requiere DNS-01, o sea que Traefik necesita credenciales de API de tu proveedor de DNS. Hay que resolverlo en la primera slice, no cuando quieras crear el segundo espacio.
+Un certificado `*.midominio.com` **no se puede emitir con el desafío HTTP-01**. Requiere DNS-01, o sea que Caddy necesita credenciales de API de tu proveedor de DNS (vía el plugin correspondiente). Hay que resolverlo en la primera slice, no cuando quieras crear el segundo espacio.
 
 ---
 
@@ -243,7 +243,7 @@ guardar post → render md → guardar body_html → invalidar índices del espa
 
 ```yaml
 # docker-compose.yml — estructura
-traefik     # TLS wildcard vía DNS-01, enruta *.midominio.com al app
+caddy       # TLS wildcard vía DNS-01, enruta *.midominio.com al app
 app         # Node, puerto interno
 postgres    # volumen persistente
 ```
