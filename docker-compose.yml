@@ -2,9 +2,45 @@ services:
   app:
     build: .
     restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     environment:
       BASE_DOMAIN: localhost
       PORT: "3000"
+      DATABASE_URL: postgres://${POSTGRES_USER:-multiblog}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-multiblog}
+
+  # Contenedor one-shot: aplica migraciones y siembra espacios/usuario antes
+  # de que `app` levante (spec §8). Usa la etapa `migrate` del Dockerfile,
+  # que sí trae drizzle-kit y tsx (devDependencies que `app` no necesita).
+  migrate:
+    build:
+      context: .
+      target: migrate
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      BASE_DOMAIN: localhost
+      DATABASE_URL: postgres://${POSTGRES_USER:-multiblog}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-multiblog}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-multiblog}
+      POSTGRES_USER: ${POSTGRES_USER:-multiblog}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-multiblog}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   caddy:
     image: caddy:2-alpine
@@ -19,3 +55,4 @@ services:
 
 volumes:
   caddy_data:
+  postgres_data:

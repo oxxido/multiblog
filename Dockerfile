@@ -11,6 +11,13 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN pnpm build
 
+# Migraciones y seed necesitan drizzle-kit y tsx (devDependencies): usan
+# `deps`, no `prod-deps`. `app` en runtime no carga ninguna de las dos.
+FROM deps AS migrate
+COPY drizzle.config.ts ./
+COPY src ./src
+CMD ["sh", "-c", "pnpm exec drizzle-kit migrate && pnpm exec tsx src/db/seed.ts"]
+
 FROM base AS prod-deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --prod --frozen-lockfile
