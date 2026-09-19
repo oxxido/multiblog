@@ -1,0 +1,666 @@
+/* Multiblog — sistema visual público. docs/Design.md es la fuente; este
+   archivo es su única implementación (docs/slices/04.md T1). */
+
+:root {
+  --color-bg: #f2f2f3;
+  --color-text: #1d1f20;
+  --rule-strong: rgba(29, 31, 32, 0.16);
+  --rule-weak: rgba(29, 31, 32, 0.1);
+
+  --font-heading: "Barlow Condensed", system-ui, sans-serif;
+  --font-body: "Barlow", system-ui, sans-serif;
+  --font-serif: "Literata", Georgia, serif;
+
+  /* El servidor sólo inyecta --sp (accent_color del espacio) en la raíz del
+     shell de espacio; --sp-deep y --sp-line se derivan acá siempre con la
+     misma fórmula (Design.md §1), así un espacio nuevo no necesita CSS. */
+  --sp: #5980a6;
+  --sp-deep: color-mix(in oklab, var(--sp) 72%, #101110);
+  --sp-line: color-mix(in oklab, var(--sp) 32%, #f2f2f3);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-bg);
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+/* — marcos .blueprint: tarjetas de espacio y galería de post — */
+.blueprint {
+  position: relative;
+  border: 1px solid var(--rule-strong);
+}
+.blueprint > .corner {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+.blueprint > .corner::before,
+.blueprint > .corner::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+}
+.blueprint > .corner::before {
+  left: 5px;
+  top: 0;
+  width: 1px;
+  height: 100%;
+}
+.blueprint > .corner::after {
+  top: 5px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+}
+.blueprint > .corner.tl {
+  top: -6px;
+  left: -6px;
+}
+.blueprint > .corner.tr {
+  top: -6px;
+  right: -6px;
+}
+.blueprint > .corner.bl {
+  bottom: -6px;
+  left: -6px;
+}
+.blueprint > .corner.br {
+  bottom: -6px;
+  right: -6px;
+}
+
+/* — tags — */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  padding: 3px 10px;
+  text-decoration: none;
+}
+.tag-outline {
+  border: 1px solid var(--sp);
+  color: var(--sp-deep);
+}
+
+/* — botones — */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  padding: 8px 14px;
+  border: 1px solid var(--rule-strong);
+  color: var(--color-text);
+  background: transparent;
+}
+.btn-secondary:hover {
+  background: color-mix(in srgb, var(--color-text) 7%, transparent);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Shell central — divermente.com (Design.md §2)
+   ══════════════════════════════════════════════════════════════════════ */
+
+.central {
+  max-width: 1200px;
+  margin-inline: auto;
+}
+
+.central-hero {
+  position: relative;
+  height: 520px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 34px 48px 44px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+/* Design.md §2.1 asume foto (variante con foto, S7); sin media todavía se
+   degrada a fondo papel y texto en tinta, misma altura y estructura. */
+.central-hero__nav {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.central-hero__brand {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.central-hero__links {
+  display: flex;
+  gap: 26px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+.central-hero__links a {
+  text-decoration: none;
+}
+.central-hero h1 {
+  font-size: 66px;
+  line-height: 1.02;
+  max-width: 15ch;
+}
+.central-hero__lead {
+  margin: 18px 0 0;
+  font-size: 17px;
+  max-width: 54ch;
+}
+
+.central-section {
+  padding: 40px 48px 44px;
+  border-top: 1px solid var(--rule-strong);
+}
+.central-section__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+.central-section__title {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.central-section__count {
+  font-size: 12px;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+}
+
+.space-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+.space-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 22px 20px;
+  text-decoration: none;
+  color: var(--color-text);
+}
+.space-card__name {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.space-card__dot {
+  width: 9px;
+  height: 9px;
+  display: block;
+}
+.space-card__name span:last-child {
+  font-family: var(--font-heading);
+  font-size: 22px;
+}
+.space-card__desc {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+.space-card__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-top: 14px;
+  margin-top: auto;
+  border-top: 1px solid var(--rule-weak);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.latest-list {
+  display: flex;
+  flex-direction: column;
+}
+.latest-item {
+  display: grid;
+  grid-template-columns: 18px 1fr 92px;
+  align-items: baseline;
+  gap: 18px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--rule-weak);
+  text-decoration: none;
+  color: var(--color-text);
+}
+.latest-item:last-child {
+  border-bottom: none;
+}
+.latest-item__dot {
+  width: 8px;
+  height: 8px;
+  display: block;
+  transform: translateY(-2px);
+}
+.latest-item__title {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 23px;
+  line-height: 1.2;
+}
+.latest-item__excerpt {
+  display: block;
+  margin-top: 5px;
+  font-size: 14px;
+  color: color-mix(in srgb, var(--color-text) 62%, transparent);
+}
+.latest-item__date {
+  text-align: right;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+}
+
+.tag-row {
+  display: flex;
+  align-items: baseline;
+  gap: 36px;
+  flex-wrap: wrap;
+}
+.tag-row__title {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tag-row__tags {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.central-footer {
+  padding: 18px 48px 26px;
+  border-top: 1px solid var(--rule-strong);
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Shell de espacio — {espacio}.divermente.com (Design.md §3)
+   ══════════════════════════════════════════════════════════════════════ */
+
+.space-shell {
+  max-width: 1040px;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+}
+.space-canto {
+  background: var(--sp);
+}
+
+.space-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 40px;
+  border-bottom: 2px solid var(--sp);
+}
+.space-nav__name {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.space-nav__links {
+  display: flex;
+  gap: 24px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+.space-nav__links a {
+  text-decoration: none;
+}
+.space-nav__links a:last-child {
+  color: var(--sp-deep);
+}
+
+.space-hero {
+  position: relative;
+  height: 320px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 40px 32px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+/* Sin foto (camino real hoy, docs/slices/04.md §0): fondo papel, filete y
+   H1 en tinta. La variante con foto (S7) reemplaza el fondo por la imagen
+   y pasa filete/título/entradilla a blanco sobre el degradado. */
+.space-hero__inner {
+  width: 100%;
+}
+.space-hero__rule {
+  width: 64px;
+  height: 5px;
+  background: var(--sp);
+  margin-bottom: 16px;
+}
+.space-hero h1 {
+  font-size: 54px;
+  line-height: 1.02;
+}
+.space-hero__lead {
+  margin: 10px 0 0;
+  font-size: 17px;
+  max-width: 54ch;
+  font-family: var(--font-serif);
+}
+
+.category-bar {
+  display: flex;
+  border-bottom: 1px solid var(--rule-strong);
+}
+.category-bar__item {
+  flex: 1;
+  text-align: center;
+  padding: 13px 0;
+  font-size: 12.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: color-mix(in srgb, var(--color-text) 65%, transparent);
+  border-left: 1px solid var(--rule-weak);
+}
+.category-bar__item:first-child {
+  border-left: none;
+}
+.category-bar__item.is-active {
+  color: var(--color-text);
+  border-bottom: 3px solid var(--sp);
+}
+
+.post-list {
+  padding: 14px 40px 24px;
+  max-width: 800px;
+}
+.post-list__item {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  gap: 20px;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--sp-line);
+  text-decoration: none;
+  color: var(--color-text);
+}
+.post-list__item:last-child {
+  border-bottom: none;
+}
+.post-list__index {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  color: var(--sp);
+  padding-top: 4px;
+}
+.post-list__meta {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  margin-bottom: 8px;
+}
+.post-list__meta-category {
+  color: var(--sp-deep);
+}
+.post-list__title {
+  font-family: var(--font-heading);
+  font-size: 34px;
+  line-height: 1.08;
+}
+.post-list__excerpt {
+  margin: 8px 0 0;
+  font-family: var(--font-serif);
+  font-size: 16.5px;
+  line-height: 1.65;
+  max-width: 62ch;
+  color: color-mix(in srgb, var(--color-text) 75%, transparent);
+}
+
+.pagination {
+  padding: 0 40px 30px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.pagination__count {
+  font-size: 12px;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+}
+
+.space-footer {
+  padding: 14px 40px 24px;
+  border-top: 1px solid var(--rule-strong);
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Página de post (Design.md §3, "Página de post")
+   ══════════════════════════════════════════════════════════════════════ */
+
+.post-panorama {
+  height: 248px;
+  background: var(--color-bg);
+}
+/* Sin foto (camino real hoy): fondo papel. Con foto (S7): imagen a sangre
+   en blanco y negro, misma altura y misma franja de --sp debajo. */
+.post-panorama__rule {
+  height: 5px;
+  background: var(--sp);
+}
+
+.post-context {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 40px 0;
+}
+.post-context__meta {
+  font-size: 12.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+.post-context__meta strong {
+  font-weight: inherit;
+  color: var(--sp-deep);
+}
+.post-context__caption {
+  font-size: 12px;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+  text-align: right;
+  max-width: 40ch;
+}
+
+.post-article {
+  padding: 24px 0 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-article__lead {
+  width: 100%;
+  max-width: 640px;
+}
+.post-article h1 {
+  font-size: 54px;
+  line-height: 1.02;
+}
+.post-lead {
+  margin: 18px 0 0;
+  font-family: var(--font-serif);
+  font-size: 20px;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--color-text) 78%, transparent);
+}
+
+.post-body {
+  width: 100%;
+  max-width: 640px;
+  margin-top: 32px;
+  font-family: var(--font-serif);
+  font-size: 19px;
+  line-height: 1.7;
+}
+.post-body p {
+  margin: 0 0 24px;
+}
+.post-body h2 {
+  font-size: 34px;
+  line-height: 1.1;
+  margin: 48px 0 14px;
+}
+
+/* Bloques ricos (Design.md §3, punto 6). Sin remark-directive todavía
+   (S6): estas clases no las produce ningún post real hoy — quedan listas
+   para cuando el registro de bloques exista (docs/slices/04.md §0). */
+.callout {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 0 28px;
+  border-left: 4px solid var(--sp);
+  background: color-mix(in srgb, var(--sp) 9%, transparent);
+  padding: 20px 24px;
+}
+.callout__label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sp-deep);
+  margin-bottom: 6px;
+}
+.callout p {
+  margin: 0;
+  font-size: 17.5px;
+  line-height: 1.6;
+}
+
+.gallery {
+  width: 100%;
+  max-width: 860px;
+  margin: 16px 0 8px;
+}
+.gallery__grid {
+  display: grid;
+  grid-template-columns: repeat(var(--gallery-cols, 3), minmax(0, 1fr));
+  gap: 14px;
+}
+.gallery__frame {
+  aspect-ratio: 4 / 3;
+}
+.gallery figcaption {
+  margin-top: 10px;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.code-block {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 0 24px;
+  padding: 22px 24px;
+  background: #e9e9ea;
+  border: 1px solid var(--rule-strong);
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.post-tags {
+  width: 100%;
+  max-width: 640px;
+  margin-top: 44px;
+  padding-top: 24px;
+  border-top: 1px solid var(--sp-line);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.post-adjacent {
+  width: 100%;
+  max-width: 640px;
+  margin-top: 22px;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  font-size: 13.5px;
+}
+.post-adjacent a {
+  text-decoration: none;
+  color: var(--sp-deep);
+  max-width: 44%;
+}
+.post-adjacent a:last-child {
+  text-align: right;
+}
+
+.post-footer {
+  padding: 14px 40px 24px;
+  border-top: 1px solid var(--rule-strong);
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+  word-break: break-all;
+}

@@ -1,16 +1,60 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" style="--sp: <%= it.accentColor %>;">
   <head>
-    <meta charset="utf-8" />
-    <title><%= it.title %> · <%= it.spaceName %></title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <%~ include("partials/head", { title: it.title }) %>
   </head>
   <body>
-    <header>
-      <p><%= it.spaceName %></p>
-    </header>
-    <main>
-      <%~ it.html %>
-    </main>
+    <div class="space-shell">
+      <div class="space-canto"></div>
+      <div>
+        <%~ include("partials/space-nav", { spaceName: it.spaceName, centralUrl: it.centralUrl }) %>
+
+        <div class="post-panorama"></div>
+        <div class="post-panorama__rule"></div>
+
+        <div class="post-context">
+          <div class="post-context__meta">
+            <% if (it.category) { %><strong><%= it.category.name %></strong> · <% } %><%= it.date %> ·
+            <%= it.readingMinutes %> min
+          </div>
+        </div>
+
+        <div class="post-article">
+          <div class="post-article__lead">
+            <h1><%= it.heading %></h1>
+            <% if (it.lead) { %>
+            <p class="post-lead"><%= it.lead %></p>
+            <% } %>
+          </div>
+
+          <div class="post-body"><%~ it.html %></div>
+
+          <% if (it.tags.length > 0) { %>
+          <div class="post-tags">
+            <% it.tags.forEach(function(tag) { %>
+            <span class="tag tag-outline"><%= tag.name %></span>
+            <% }) %>
+          </div>
+          <% } %>
+
+          <% if (it.prev || it.next) { %>
+          <div class="post-adjacent">
+            <% if (it.prev) { %>
+            <a href="/<%= it.prev.slug %>">← <%= it.prev.title %></a>
+            <% } else { %>
+            <span></span>
+            <% } %> <% if (it.next) { %>
+            <a href="/<%= it.next.slug %>"><%= it.next.title %> →</a>
+            <% } %>
+          </div>
+          <% } %>
+        </div>
+
+        <div class="post-footer">
+          <span><%= it.postUrl %></span>
+          <span>RSS del espacio · <a href="<%= it.centralUrl %>">← todo</a></span>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

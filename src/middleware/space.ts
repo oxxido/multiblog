@@ -8,7 +8,10 @@ export type ResolvedSpace = typeof spaces.$inferSelect;
 
 declare module "fastify" {
   interface FastifyRequest {
-    space: ResolvedSpace;
+    // null: Host es exactamente BASE_DOMAIN, sin subdominio (home central,
+    // SPEC.md línea 140). Ningún subdominio resuelto y distinto de
+    // BASE_DOMAIN sigue siendo 404, no null.
+    space: ResolvedSpace | null;
   }
 }
 
@@ -36,6 +39,13 @@ export async function resolveSpaceMiddleware(
   reply: FastifyReply,
 ): Promise<void> {
   const host = request.headers.host ?? "";
+  const hostname = host.split(":")[0] ?? "";
+
+  if (hostname === env.BASE_DOMAIN) {
+    request.space = null;
+    return;
+  }
+
   const subdomain = subdomainFor(host, env.BASE_DOMAIN);
   const space = subdomain ? await resolveSpace(subdomain) : undefined;
 
