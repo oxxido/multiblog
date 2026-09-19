@@ -1,35 +1,64 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" style="--sp: <%= it.accentColor %>;">
   <head>
-    <meta charset="utf-8" />
-    <title><%= it.heading %> · <%= it.spaceName %></title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <%~ include("partials/head", { title: `${it.heading} · ${it.spaceName}` }) %>
   </head>
   <body>
-    <header>
-      <p><%= it.spaceName %></p>
-      <h1><%= it.heading %></h1>
-    </header>
-    <main>
-      <ul>
-        <% it.items.forEach(function(post) { %>
-        <li>
-          <a href="/<%= post.slug %>"><%= post.title %></a>
-          <% if (post.excerpt) { %>
-          <p><%= post.excerpt %></p>
-          <% } %>
-        </li>
-        <% }) %>
-      </ul>
+    <div class="space-shell">
+      <div class="space-canto"></div>
+      <div>
+        <%~ include("partials/space-nav", { spaceName: it.spaceName, centralUrl: it.centralUrl }) %>
 
-      <nav>
-        <% if (it.page > 1) { %>
-        <a href="<%= it.basePath %>?page=<%= it.page - 1 %>">← Anterior</a>
-        <% } %>
-        <% if (it.hasNext) { %>
-        <a href="<%= it.basePath %>?page=<%= it.page + 1 %>">Siguiente →</a>
-        <% } %>
-      </nav>
-    </main>
+        <div class="space-hero">
+          <div class="space-hero__inner">
+            <div class="space-hero__rule"></div>
+            <h1><%= it.spaceName %></h1>
+            <% if (it.description) { %>
+            <p class="space-hero__lead"><%= it.description %></p>
+            <% } %>
+          </div>
+        </div>
+
+        <div class="category-bar" id="categorias">
+          <% it.categories.forEach(function(category) { %>
+          <a
+            href="<%= category.href %>"
+            class="category-bar__item<% if (category.active) { %> is-active<% } %>"
+            ><%= category.label %></a
+          >
+          <% }) %>
+        </div>
+
+        <div class="post-list">
+          <% it.items.forEach(function(post, index) { %>
+          <a href="/<%= post.slug %>" class="post-list__item">
+            <div class="post-list__index"><%= String(index + 1).padStart(2, "0") %></div>
+            <div>
+              <div class="post-list__meta">
+                <% if (post.category) { %><span class="post-list__meta-category"><%= post.category.name %></span> ·
+                <% } %><%= post.date %> · <%= post.readingMinutes %> min
+              </div>
+              <div class="post-list__title"><%= post.title %></div>
+              <% if (post.excerpt) { %>
+              <p class="post-list__excerpt"><%= post.excerpt %></p>
+              <% } %>
+            </div>
+          </a>
+          <% }) %>
+        </div>
+
+        <div class="pagination">
+          <% if (it.page > 1) { %>
+          <a href="<%= it.basePath %>?page=<%= it.page - 1 %>" class="btn btn-secondary">Posts anteriores</a>
+          <% } %>
+          <span class="pagination__count"><%= it.page %> de <%= it.totalPages %></span>
+        </div>
+
+        <div class="space-footer">
+          <span><%= it.subdomain %></span>
+          <span>RSS del espacio · <a href="<%= it.centralUrl %>">← todo</a></span>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

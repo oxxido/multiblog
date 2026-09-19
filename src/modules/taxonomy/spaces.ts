@@ -1,6 +1,6 @@
-import { eq, isNull } from "drizzle-orm";
+import { and, count, eq, isNull } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { spaces } from "../../db/schema.js";
+import { posts, spaces } from "../../db/schema.js";
 
 const LIST_LIMIT = 200;
 
@@ -108,4 +108,30 @@ export async function listSpaceOptionsForPost(currentSpaceId: string): Promise<S
   }
 
   return [...active, { id: current.id, name: `${current.name} (archivado)` }];
+}
+
+export interface ActiveSpaceWithPostCount {
+  slug: string;
+  subdomain: string;
+  name: string;
+  description: string | null;
+  accentColor: string | null;
+  publishedCount: number;
+}
+
+export async function listActiveSpacesWithPostCounts(lang: "es" | "en"): Promise<ActiveSpaceWithPostCount[]> {
+  return db
+    .select({
+      slug: spaces.slug,
+      subdomain: spaces.subdomain,
+      name: spaces.name,
+      description: spaces.description,
+      accentColor: spaces.accentColor,
+      publishedCount: count(posts.id),
+    })
+    .from(spaces)
+    .leftJoin(posts, and(eq(posts.spaceId, spaces.id), eq(posts.lang, lang), eq(posts.status, "published")))
+    .where(isNull(spaces.archivedAt))
+    .groupBy(spaces.id)
+    .limit(LIST_LIMIT);
 }

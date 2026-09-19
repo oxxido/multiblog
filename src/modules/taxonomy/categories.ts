@@ -79,3 +79,16 @@ export async function updateCategory(id: string, input: CategoryInput): Promise<
 export async function deleteCategory(id: string): Promise<void> {
   await db.delete(categories).where(eq(categories.id, id));
 }
+
+export interface CategoryRef {
+  slug: string;
+  name: string;
+}
+
+export async function listCategoriesForSpace(spaceId: string): Promise<CategoryRef[]> {
+  return db
+    .select({ slug: categories.slug, name: categories.name })
+    .from(categories)
+    .where(eq(categories.spaceId, spaceId))
+    .limit(LIST_LIMIT);
+}

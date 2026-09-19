@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <%~ include("partials/head", { title: it.title }) %>
+  </head>
+  <body>
+    <div class="central">
+      <div class="central-hero">
+        <div class="central-hero__nav">
+          <div class="central-hero__brand"><%= it.brand %></div>
+          <div class="central-hero__links">
+            <a href="#espacios">Espacios</a>
+            <a href="#tags">Tags</a>
+            <span>RSS</span>
+          </div>
+        </div>
+        <div>
+          <h1>Un solo sitio,<br />varios espacios.</h1>
+          <% if (it.spaceNames) { %>
+          <p class="central-hero__lead">
+            <%= it.spaceNames %>. Cada uno vive en su propio subdominio y escribe a su ritmo; acá se ven todos
+            juntos.
+          </p>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="central-section" id="espacios">
+        <div class="central-section__header">
+          <div class="central-section__title">Espacios</div>
+          <div class="central-section__count"><%= it.activeCount %> activos · <%= it.totalPublished %> publicados</div>
+        </div>
+        <div class="space-grid">
+          <% it.spaces.forEach(function(space) { %>
+          <a href="<%= space.url %>" class="blueprint space-card">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            <div class="space-card__name">
+              <span class="space-card__dot" style="background: <%= space.accentColor %>;"></span>
+              <span><%= space.name %></span>
+            </div>
+            <% if (space.description) { %>
+            <p class="space-card__desc"><%= space.description %></p>
+            <% } %>
+            <div class="space-card__meta">
+              <span><%= space.subdomain %></span>
+              <span><%= space.publishedCount %></span>
+            </div>
+          </a>
+          <% }) %>
+        </div>
+      </div>
+
+      <div class="central-section">
+        <div class="central-section__title" style="margin-bottom: 8px;">Último</div>
+        <div class="latest-list">
+          <% it.latest.forEach(function(item) { %>
+          <a href="<%= item.url %>" class="latest-item">
+            <span class="latest-item__dot" style="background: <%= item.accentColor %>;"></span>
+            <span>
+              <span class="latest-item__title"><%= item.title %></span>
+              <% if (item.excerpt) { %>
+              <span class="latest-item__excerpt"><%= item.excerpt %></span>
+              <% } %>
+            </span>
+            <span class="latest-item__date"><%= item.date %></span>
+          </a>
+          <% }) %>
+        </div>
+      </div>
+
+      <div class="central-section" id="tags">
+        <div class="tag-row">
+          <div class="tag-row__title">Tags que cruzan</div>
+          <div class="tag-row__tags">
+            <% it.tags.forEach(function(tag) { %>
+            <span class="tag tag-outline"><%= tag.name %> · <%= tag.count %></span>
+            <% }) %>
+          </div>
+        </div>
+      </div>
+
+      <div class="central-footer">
+        <span><%= it.brand %></span>
+        <span>RSS agregado · Archivo</span>
+      </div>
+    </div>
+  </body>
+</html>

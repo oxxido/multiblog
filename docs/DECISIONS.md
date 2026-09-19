@@ -19,6 +19,7 @@
 | D10 | Flujo de git por slice: rama nueva antes de empezar a implementar, commits cuando corresponda durante el trabajo, y push al cerrar la slice (si hace falta) con link y mensaje de PR propuestos al usuario — el PR mismo no se crea sin que él lo pida. | — | `CLAUDE.md` "Cómo trabajar" |
 | D11 | El servicio `caddy` del `docker-compose.yml` de Multiblog se vuelve opcional (`profiles: ["local-caddy"]`), no arranca en `docker compose up` normal. `app` publica su puerto (`3000:3000`) al host. Esto materializa lo que D7 ya preveía: en el redeploy real de S2 en dockge, el borde es el Caddy del Pi, que llega a esta máquina por IP:puerto directo — el Caddy propio quedaba de más ahí y además rompía el arranque en dockge (bind mount de `Caddyfile` sobre un directorio fantasma). El Caddy local se sigue usando para pruebas completas contra `*.localhost` con `docker compose --profile local-caddy up`. | S2 (redeploy) | D7 |
 | D12 | Dev y prod corren en la misma máquina (D2) como procesos separados, en puertos fijos distintos: **prod** (contenedor `app` de `docker-compose.yml`) en `3000`; **dev** (`pnpm dev` suelto con `tsx`) en `3100`, vía `PORT` en `.env.local`. No es una convención de código, es sólo asignación manual para no pisarse en esta máquina — si se agrega otro entorno (staging, etc.) le toca otro puerto libre. | — | D2, D11 |
+| D13 | Se inserta una slice nueva, **S4 — Implementación del diseño existente**, entre S3 y el editor visual. Aplica `docs/Design.md` + `docs/UI_mockups/` al shell de espacio, al post y a una versión mínima de la home central (`midominio.com`, adelantada de S8 sólo para esa vista). Sin fotos reales (variante "sin foto" de `Design.md`, hasta que S7/Media exista), sin CSS de admin (`Design.md` no lo cubre), con el CSS de bloques ricos (`callout`, `gallery`) ya escrito aunque el bloque en sí llega en S6. Fuentes por Google Fonts (`<link>`), no autohospedadas. Esto corre un número a todo lo que seguía: editor visual (antes S4) → **S5**, bloques → **S6**, media → **S7**, sitio central y distribución → **S8**, flujo de escritura → **S9**. La slice bilingüe que `docs/I18N.md` §7 preveía insertar después de bloques/media (sin número fijo en `PLAN.md` todavía) pasa de S7 a **S8**, corriendo sitio central a S9 y flujo de escritura a S10 — ya actualizado en `docs/I18N.md` y en la mención de D8. | S4 | `PLAN.md` S4-S9 (renumeración), `docs/slices/04.md` → `05.md`, `docs/I18N.md` §7, D8 |
 
 ---
 
@@ -130,7 +131,7 @@ pasa a ocurrir al guardar y esta ruta deja de tocar el pipeline directamente.
 `docs/slices/02.md` T2 pedía sólo el esquema de `SPEC.md` §6. Pero
 `docs/I18N.md` §7 dice explícitamente que S2 tiene que incorporar `lang`,
 `translation_group_id` y las claves únicas nuevas, sin esperar a la slice de
-traducción (S7): es la única parte de i18n que no se puede posponer sin
+traducción (S8): es la única parte de i18n que no se puede posponer sin
 pagar una migración de URLs después de indexado. Se resolvió esta
 contradicción entre documentos a favor de `I18N.md`: el esquema de `posts` y
 `post_slugs` de S2 ya tiene la forma final (`lang`, `translation_group_id`,

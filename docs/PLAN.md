@@ -68,7 +68,29 @@ Todavía sin editor visual. Un `<textarea>` con Markdown crudo.
 
 ---
 
-## S4 — Editor visual
+## S4 — Implementación del diseño existente
+
+Aplica el diseño ya aprobado en `docs/Design.md` y `docs/UI_mockups/` a lo
+que S1-S3 ya sirven (shell de espacio: home + categoría + post), más una
+home central mínima adelantada de S8 sólo para esa vista. No cambia el
+modelo de datos ni el pipeline de Markdown, pero sí toca rutas y módulos
+para dar forma a los datos que el diseño necesita (categoría y minutos de
+lectura por post, post anterior/siguiente, agregación entre espacios) y
+para resolver `Host` sin subdominio, que `SPEC.md` fija desde el principio
+y ninguna slice había implementado. Desglose en `docs/slices/04.md`.
+
+**Aceptación**
+```
+✓ home de espacio, página de post y home central mínima igualan el mockup
+  aprobado
+✓ acento por espacio, tipografía y retícula de Design.md aplicados
+✓ Host sin subdominio → home central; Host desconocido → sigue en 404
+✓ pnpm lint && pnpm typecheck && pnpm test en verde
+```
+
+---
+
+## S5 — Editor visual
 
 La slice más grande. Se apoya en todo lo anterior ya verificado.
 
@@ -86,7 +108,7 @@ La slice más grande. Se apoya en todo lo anterior ya verificado.
 
 ---
 
-## S5 — Bloques
+## S6 — Bloques
 
 - registro de bloques (§3 del spec)
 - `remark-directive` en el pipeline
@@ -103,7 +125,7 @@ La slice más grande. Se apoya en todo lo anterior ya verificado.
 
 ---
 
-## S6 — Media
+## S7 — Media
 
 - subida de imágenes al volumen
 - derivados en varios anchos + WebP
@@ -120,7 +142,7 @@ La slice más grande. Se apoya en todo lo anterior ya verificado.
 
 ---
 
-## S7 — Sitio central y distribución
+## S8 — Sitio central y distribución
 
 - home de `midominio.com`: últimos posts de todos los espacios, con su origen visible
 - `/espacios` y `/t/{tag}`
@@ -138,7 +160,7 @@ La slice más grande. Se apoya en todo lo anterior ya verificado.
 
 ---
 
-## S8 — Flujo de escritura
+## S9 — Flujo de escritura
 
 Lo que hace que uses la herramienta en vez de tolerarla.
 

@@ -1,10 +1,10 @@
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, lt } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { categories, postCategories, posts, postSlugs, spaces } from "../../db/schema.js";
+import { categories, postCategories, posts, postSlugs, postTags, spaces, tags } from "../../db/schema.js";
 import { renderMarkdown } from "../../markdown/pipeline.js";
 
 const LIST_LIMIT = 200;
-const PAGE_SIZE = 10;
+export const PAGE_SIZE = 10;
 
 export interface PostSummary {
   id: string;
@@ -174,20 +174,128 @@ export async function deletePost(id: string): Promise<void> {
   await db.delete(posts).where(eq(posts.id, id));
 }
 
+const WORDS_PER_MINUTE = 200;
+
+// Palabras / 200, redondeado hacia arriba, mínimo 1 (docs/slices/04.md §0):
+// no se guarda en la base, se deriva de body_md en cada lectura.
+function computeReadingMinutes(bodyMd: string): number {
+  const words = bodyMd.trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / WORDS_PER_MINUTE));
+}
+
+export interface PostCategoryRef {
+  slug: string;
+  name: string;
+}
+
+export interface PostTagRef {
+  slug: string;
+  name: string;
+}
+
+export interface AdjacentPostRef {
+  slug: string;
+  title: string;
+}
+
+export interface PublishedPostView {
+  title: string;
+  excerpt: string | null;
+  bodyHtml: string;
+  publishedAt: Date;
+  readingMinutes: number;
+  // Un post puede tener varias categorías (N a N); se muestra la primera
+  // que devuelva la consulta, sin concepto de "categoría principal"
+  // (docs/slices/04.md §0).
+  category: PostCategoryRef | null;
+  tags: PostTagRef[];
+  prev: AdjacentPostRef | null;
+  next: AdjacentPostRef | null;
+}
+
 export async function findPublishedPost(
   spaceId: string,
   lang: "es" | "en",
   slug: string,
-): Promise<{ title: string; bodyHtml: string } | null> {
+): Promise<PublishedPostView | null> {
   const [row] = await db
-    .select({ title: posts.title, bodyHtml: posts.bodyHtml })
+    .select({
+      id: posts.id,
+      title: posts.title,
+      excerpt: posts.excerpt,
+      bodyMd: posts.bodyMd,
+      bodyHtml: posts.bodyHtml,
+      publishedAt: posts.publishedAt,
+    })
     .from(posts)
     .where(
       and(eq(posts.spaceId, spaceId), eq(posts.lang, lang), eq(posts.slug, slug), eq(posts.status, "published")),
     )
     .limit(1);
 
-  return row ?? null;
+  if (!row) {
+    return null;
+  }
+
+  if (!row.publishedAt) {
+    // Igual que en toPostPage: publishPost() fija status y published_at
+    // juntos, así que este estado es imposible, no un caso a tolerar.
+    throw new Error(`Post publicado sin published_at: ${slug}`);
+  }
+
+  const [categoryRow] = await db
+    .select({ slug: categories.slug, name: categories.name })
+    .from(postCategories)
+    .innerJoin(categories, eq(postCategories.categoryId, categories.id))
+    .where(eq(postCategories.postId, row.id))
+    .limit(1);
+
+  const tagRows = await db
+    .select({ slug: tags.slug, name: tags.name })
+    .from(postTags)
+    .innerJoin(tags, eq(postTags.tagId, tags.id))
+    .where(eq(postTags.postId, row.id))
+    .limit(LIST_LIMIT);
+
+  const [prevRow] = await db
+    .select({ slug: posts.slug, title: posts.title })
+    .from(posts)
+    .where(
+      and(
+        eq(posts.spaceId, spaceId),
+        eq(posts.lang, lang),
+        eq(posts.status, "published"),
+        lt(posts.publishedAt, row.publishedAt),
+      ),
+    )
+    .orderBy(desc(posts.publishedAt))
+    .limit(1);
+
+  const [nextRow] = await db
+    .select({ slug: posts.slug, title: posts.title })
+    .from(posts)
+    .where(
+      and(
+        eq(posts.spaceId, spaceId),
+        eq(posts.lang, lang),
+        eq(posts.status, "published"),
+        gt(posts.publishedAt, row.publishedAt),
+      ),
+    )
+    .orderBy(asc(posts.publishedAt))
+    .limit(1);
+
+  return {
+    title: row.title,
+    excerpt: row.excerpt,
+    bodyHtml: row.bodyHtml,
+    publishedAt: row.publishedAt,
+    readingMinutes: computeReadingMinutes(row.bodyMd),
+    category: categoryRow ?? null,
+    tags: tagRows,
+    prev: prevRow ?? null,
+    next: nextRow ?? null,
+  };
 }
 
 export interface PostListItem {
@@ -195,6 +303,8 @@ export interface PostListItem {
   title: string;
   excerpt: string | null;
   publishedAt: Date;
+  readingMinutes: number;
+  category: PostCategoryRef | null;
 }
 
 export interface PostPage {
@@ -203,23 +313,58 @@ export interface PostPage {
 }
 
 interface PublishedPostRow {
+  id: string;
   slug: string;
   title: string;
   excerpt: string | null;
+  bodyMd: string;
   publishedAt: Date | null;
+}
+
+// La categoría es N a N (post_categories); para no pagar un lookup por fila
+// se trae en un solo IN() y se queda con la primera que aparezca por post,
+// mismo criterio "sin orden declarado" que findPublishedPost (docs/slices/04.md §0).
+async function firstCategoriesByPostId(postIds: string[]): Promise<Map<string, PostCategoryRef>> {
+  if (postIds.length === 0) {
+    return new Map();
+  }
+
+  const rows = await db
+    .select({ postId: postCategories.postId, slug: categories.slug, name: categories.name })
+    .from(postCategories)
+    .innerJoin(categories, eq(postCategories.categoryId, categories.id))
+    .where(inArray(postCategories.postId, postIds));
+
+  const byPostId = new Map<string, PostCategoryRef>();
+  for (const row of rows) {
+    if (!byPostId.has(row.postId)) {
+      byPostId.set(row.postId, { slug: row.slug, name: row.name });
+    }
+  }
+  return byPostId;
 }
 
 // Recibe PAGE_SIZE + 1 filas (así se sabe si hay página siguiente sin un
 // segundo COUNT(*), docs/slices/03.md §0) y descarta la de más.
-function toPostPage(rows: PublishedPostRow[]): PostPage {
+async function toPostPage(rows: PublishedPostRow[]): Promise<PostPage> {
   const hasNext = rows.length > PAGE_SIZE;
-  const items = rows.slice(0, PAGE_SIZE).map((row) => {
+  const pageRows = rows.slice(0, PAGE_SIZE);
+  const categoryByPostId = await firstCategoriesByPostId(pageRows.map((row) => row.id));
+
+  const items = pageRows.map((row) => {
     if (!row.publishedAt) {
       // publishPost() fija status y published_at juntos: un post "published"
       // sin fecha es un estado imposible, no un caso a tolerar en silencio.
       throw new Error(`Post publicado sin published_at: ${row.slug}`);
     }
-    return { slug: row.slug, title: row.title, excerpt: row.excerpt, publishedAt: row.publishedAt };
+    return {
+      slug: row.slug,
+      title: row.title,
+      excerpt: row.excerpt,
+      publishedAt: row.publishedAt,
+      readingMinutes: computeReadingMinutes(row.bodyMd),
+      category: categoryByPostId.get(row.id) ?? null,
+    };
   });
 
   return { items, hasNext };
@@ -232,9 +377,11 @@ export async function listPublishedPosts(
 ): Promise<PostPage> {
   const rows = await db
     .select({
+      id: posts.id,
       slug: posts.slug,
       title: posts.title,
       excerpt: posts.excerpt,
+      bodyMd: posts.bodyMd,
       publishedAt: posts.publishedAt,
     })
     .from(posts)
@@ -266,9 +413,11 @@ export async function listPublishedPostsByCategory(
 
   const rows = await db
     .select({
+      id: posts.id,
       slug: posts.slug,
       title: posts.title,
       excerpt: posts.excerpt,
+      bodyMd: posts.bodyMd,
       publishedAt: posts.publishedAt,
     })
     .from(posts)
@@ -286,6 +435,46 @@ export async function listPublishedPostsByCategory(
     .offset((page - 1) * PAGE_SIZE);
 
   return toPostPage(rows);
+}
+
+export async function countPublishedPosts(spaceId: string, lang: "es" | "en"): Promise<number> {
+  const [row] = await db
+    .select({ value: count() })
+    .from(posts)
+    .where(and(eq(posts.spaceId, spaceId), eq(posts.lang, lang), eq(posts.status, "published")));
+
+  return row?.value ?? 0;
+}
+
+export async function countPublishedPostsByCategory(
+  spaceId: string,
+  lang: "es" | "en",
+  categorySlug: string,
+): Promise<number | null> {
+  const [category] = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(and(eq(categories.spaceId, spaceId), eq(categories.slug, categorySlug)))
+    .limit(1);
+
+  if (!category) {
+    return null;
+  }
+
+  const [row] = await db
+    .select({ value: count() })
+    .from(posts)
+    .innerJoin(postCategories, eq(postCategories.postId, posts.id))
+    .where(
+      and(
+        eq(posts.spaceId, spaceId),
+        eq(posts.lang, lang),
+        eq(posts.status, "published"),
+        eq(postCategories.categoryId, category.id),
+      ),
+    );
+
+  return row?.value ?? 0;
 }
 
 export async function findCurrentSlugForRedirect(

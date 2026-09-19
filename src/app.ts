@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import fastifyView from "@fastify/view";
 import fastifyCookie from "@fastify/cookie";
+import fastifyStatic from "@fastify/static";
 import { Eta } from "eta";
 import path from "node:path";
 import publicRoutes from "./routes/public/index.js";
@@ -15,6 +16,11 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   await app.register(fastifyCookie);
+
+  await app.register(fastifyStatic, {
+    root: path.join(process.cwd(), "public"),
+    prefix: "/",
+  });
 
   // Los formularios del admin no llevan JS (invariante 3): se envían como
   // application/x-www-form-urlencoded, que Fastify no parsea por defecto.
