@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title><%= it.space ? "Editar espacio" : "Nuevo espacio" %> · Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <header>
+      <a href="/admin/espacios">← Espacios</a>
+      <% if (it.space && it.space.archivedAt) { %>
+      <span>Archivado</span>
+      <% } %>
+    </header>
+    <main>
+      <form method="post" action="<%= it.action %>">
+        <label>
+          Slug
+          <input type="text" name="slug" required value="<%= it.space ? it.space.slug : "" %>" />
+        </label>
+        <label>
+          Subdominio
+          <input type="text" name="subdomain" required value="<%= it.space ? it.space.subdomain : "" %>" />
+        </label>
+        <label>
+          Nombre
+          <input type="text" name="name" required value="<%= it.space ? it.space.name : "" %>" />
+        </label>
+        <label>
+          Descripción
+          <input type="text" name="description" value="<%= it.space && it.space.description ? it.space.description : "" %>" />
+        </label>
+        <label>
+          Color de acento
+          <input type="text" name="accentColor" value="<%= it.space && it.space.accentColor ? it.space.accentColor : "" %>" />
+        </label>
+        <button type="submit">Guardar</button>
+      </form>
+
+      <% if (it.space && !it.space.archivedAt) { %>
+      <form method="post" action="/admin/espacios/<%= it.space.id %>/archive">
+        <button type="submit">Archivar</button>
+      </form>
+      <% } %>
+    </main>
+  </body>
+</html>

@@ -5,10 +5,21 @@ import {
   deletePost,
   getPost,
   listPosts,
-  listSpaceOptions,
   publishPost,
   updatePost,
 } from "../../modules/content/posts.js";
+import { listActiveSpaceOptions, listSpaceOptionsForPost } from "../../modules/taxonomy/spaces.js";
+import { listCategories } from "../../modules/taxonomy/categories.js";
+
+// Checkboxes repetidos llegan como array; ninguno tildado llega ausente.
+function toArray(value: unknown): unknown[] {
+  if (value === undefined) {
+    return [];
+  }
+  return Array.isArray(value) ? value : [value];
+}
+
+const categoryIdsField = z.preprocess(toArray, z.array(z.uuid()));
 
 const postFormSchema = z.object({
   spaceId: z.uuid(),
@@ -19,6 +30,7 @@ const postFormSchema = z.object({
   title: z.string().min(1),
   excerpt: z.string().trim().transform((value) => (value.length > 0 ? value : null)),
   bodyMd: z.string().min(1),
+  categoryIds: categoryIdsField,
 });
 
 const idParamSchema = z.object({ id: z.uuid() });
@@ -30,10 +42,11 @@ export default function postRoutes(fastify: FastifyInstance): void {
   });
 
   fastify.get("/new", async (_request, reply) => {
-    const spaceOptions = await listSpaceOptions();
+    const [spaceOptions, categoryOptions] = await Promise.all([listActiveSpaceOptions(), listCategories()]);
     await reply.view("admin/posts/form.eta", {
       post: null,
       spaceOptions,
+      categoryOptions,
       action: "/admin/posts",
     });
   });
@@ -50,15 +63,21 @@ export default function postRoutes(fastify: FastifyInstance): void {
 
   fastify.get<{ Params: { id: string } }>("/:id", async (request, reply) => {
     const { id } = idParamSchema.parse(request.params);
-    const [post, spaceOptions] = await Promise.all([getPost(id), listSpaceOptions()]);
+    const post = await getPost(id);
 
     if (!post) {
       return reply.code(404).send();
     }
 
+    const [spaceOptions, categoryOptions] = await Promise.all([
+      listSpaceOptionsForPost(post.spaceId),
+      listCategories(),
+    ]);
+
     await reply.view("admin/posts/form.eta", {
       post,
       spaceOptions,
+      categoryOptions,
       action: `/admin/posts/${id}`,
     });
   });
