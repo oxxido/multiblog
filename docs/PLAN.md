@@ -142,13 +142,42 @@ La slice más grande. Se apoya en todo lo anterior ya verificado.
 
 ---
 
-## S8 — Sitio central y distribución
+## S8 — Bilingüe
+
+> Desglose completo en `docs/I18N.md` §7. Insertada después de bloques (S6)
+> y media (S7) — ver D13: traducir tiene que preservar directivas de bloque,
+> construir el traductor antes de que existan rompe el caso que importa.
+
+- prefijo de ruta `/en/` (routing pendiente desde S3, ver D16)
+- botón de traducción en el admin, llamada a un proveedor de IA
+- validación estructural del Markdown devuelto (mismas directivas, mismos tipos, mismos atributos)
+- creación del borrador en inglés dentro del grupo de traducción
+- marca de traducción desactualizada en la lista de posts
+- enlace entre idiomas, `hreflang`, `canonical`, `x-default`
+- diccionario de interfaz (~20 cadenas)
+
+**Aceptación**
+```
+✓ traducir un post con galería y bloque de código → la estructura se conserva exacta
+✓ la traducción se crea como borrador, nunca publicada
+✓ editar el original → la traducción aparece marcada como desactualizada en el admin
+✓ post con traducción publicada → hreflang recíproco en ambas páginas
+✓ post sin traducir → no aparece en la home en inglés
+✓ una traducción que devuelve directivas alteradas se rechaza y no se guarda
+```
+
+Feeds y sitemaps por idioma quedan para S9 (todavía no existen feeds ni
+sitemaps en ningún idioma) — ver D16.
+
+---
+
+## S9 — Sitio central y distribución
 
 - home de `midominio.com`: últimos posts de todos los espacios, con su origen visible
 - `/espacios` y `/t/{tag}`
 - tags globales asignables desde el admin
-- RSS por espacio y agregado
-- sitemaps + índice de sitemaps
+- RSS por espacio y agregado, ya bilingüe (`/feed.xml`, `/en/feed.xml`)
+- sitemaps + índice de sitemaps, por espacio e idioma
 - metadatos: Open Graph, canonical, títulos, descripciones
 
 **Aceptación**
@@ -160,7 +189,7 @@ La slice más grande. Se apoya en todo lo anterior ya verificado.
 
 ---
 
-## S9 — Flujo de escritura
+## S10 — Flujo de escritura
 
 Lo que hace que uses la herramienta en vez de tolerarla.
 

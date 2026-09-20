@@ -305,5 +305,11 @@ habitual, que el volumen `media_data` nuevo quede disponible para `app`.
 
 ## Próxima
 
-S8 — bilingüe (`docs/I18N.md` §7, D13): UI de traducción sobre el esquema
-que ya trae `lang`/`translation_group_id` desde S2 (D8).
+**S8 — Bilingüe.** En planificación, desglose completo en
+`docs/slices/08.md` (`docs/PLAN.md` S8, `docs/I18N.md` §7, D13). UI de
+traducción sobre el esquema que ya trae `lang`/`translation_group_id` desde
+S2 (D8). Decisiones nuevas tomadas al planificarla, en D16: proveedor de
+traducción OpenRouter (no la API de Claude directa que preveía
+`docs/I18N.md`, sin dependencia previa elegida), modelo `openrouter/auto`,
+y el routing del prefijo `/en/` (que `docs/I18N.md` le había asignado a S3
+y nunca se implementó ahí) queda absorbido acá. Sin código todavía.
