@@ -8,10 +8,21 @@
   <body>
     <header>
       <a href="/admin/posts">← Posts</a>
-      <span>Estado: <%= it.post.status %></span>
+      <span>
+        Estado:
+        <% if (it.post.status === "draft") { %> Borrador <% } else if (it.post.status === "scheduled") { %>
+        Programado para <%= it.post.publishedAt.toISOString() %> <% } else { %> Publicado <% } %>
+      </span>
       <span>Idioma: <%= it.post.lang %></span>
     </header>
     <main>
+      <p>
+        Vista previa: <a href="<%= it.previewUrl %>"><%= it.previewUrl %></a>
+        <form method="post" action="/admin/posts/<%= it.post.id %>/rotate-preview-token" style="display: inline">
+          <button type="submit">Rotar link</button>
+        </form>
+      </p>
+      <p><a href="/admin/posts/<%= it.post.id %>/revisions">Ver historial</a></p>
       <% if (it.translateError) { %>
       <p><%= it.translateError %></p>
       <% } %> <% if (it.sibling) { %>
@@ -81,7 +92,19 @@
       <form method="post" action="/admin/posts/<%= it.post.id %>/publish">
         <button type="submit">Publicar</button>
       </form>
-      <% if (it.post.lang === "es" && it.post.status === "published") { %>
+      <form method="post" action="/admin/posts/<%= it.post.id %>/schedule">
+        <label>
+          Programar para
+          <input type="datetime-local" name="publishAt" required />
+        </label>
+        <button type="submit">Programar</button>
+      </form>
+      <% if (it.post.status === "scheduled") { %>
+      <p>Programado para <%= it.post.publishedAt.toISOString() %></p>
+      <form method="post" action="/admin/posts/<%= it.post.id %>/cancel-schedule">
+        <button type="submit">Cancelar programación</button>
+      </form>
+      <% } %> <% if (it.post.lang === "es" && it.post.status === "published") { %>
       <form method="post" action="/admin/posts/<%= it.post.id %>/translate">
         <button type="submit">Traducir al inglés</button>
       </form>

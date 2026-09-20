@@ -2,20 +2,25 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
   autosavePostBody,
+  cancelSchedule,
   createPost,
   deletePost,
   findTranslationSibling,
   getPost,
   listPosts,
   publishPost,
+  rotatePreviewToken,
+  schedulePost,
   updatePost,
 } from "../../modules/content/posts.js";
-import { listActiveSpaceOptions, listSpaceOptionsForPost } from "../../modules/taxonomy/spaces.js";
+import { diffAgainstPrevious, getRevision, listRevisions, recordRevisionIfChanged } from "../../modules/content/revisions.js";
+import { getSpace, listActiveSpaceOptions, listSpaceOptionsForPost } from "../../modules/taxonomy/spaces.js";
 import { listCategories } from "../../modules/taxonomy/categories.js";
 import { parseTagNames } from "../../modules/taxonomy/tags.js";
 import { fromMarkdown } from "../../markdown/tiptap/fromMarkdown.js";
 import { resolveCoverImage } from "../../modules/media/media.js";
 import { translatePost } from "../../modules/translation/translate.js";
+import { previewUrlFor } from "../public/urls.js";
 
 // Checkboxes repetidos llegan como array; ninguno tildado llega ausente.
 function toArray(value: unknown): unknown[] {
@@ -64,6 +69,24 @@ const autosaveBodySchema = z.object({ bodyMd: z.string() });
 
 const idParamSchema = z.object({ id: z.uuid() });
 
+const scheduleFormSchema = z.object({
+  publishAt: z
+    .string()
+    .min(1)
+    .transform((value, ctx) => {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) {
+        ctx.addIssue({ code: "custom", message: "Fecha inválida" });
+        return z.NEVER;
+      }
+      if (date.getTime() <= Date.now()) {
+        ctx.addIssue({ code: "custom", message: "La fecha de programación debe ser futura" });
+        return z.NEVER;
+      }
+      return date;
+    }),
+});
+
 const postQuerySchema = z.object({ translateError: z.string().optional() });
 
 export default function postRoutes(fastify: FastifyInstance): void {
@@ -96,12 +119,17 @@ export default function postRoutes(fastify: FastifyInstance): void {
       return reply.code(404).send();
     }
 
-    const [spaceOptions, categoryOptions, cover, sibling] = await Promise.all([
+    const [spaceOptions, categoryOptions, cover, sibling, space] = await Promise.all([
       listSpaceOptionsForPost(post.spaceId),
       listCategories(),
       resolveCoverImage(post.coverMediaId),
       findTranslationSibling(post.translationGroupId, id),
+      getSpace(post.spaceId),
     ]);
+
+    if (!space) {
+      throw new Error(`Post ${id} sin espacio`);
+    }
 
     const siblingIsStale =
       post.lang === "es" && sibling !== null && sibling.translatedAt !== null && post.updatedAt > sibling.translatedAt;
@@ -116,6 +144,7 @@ export default function postRoutes(fastify: FastifyInstance): void {
       translateError: translateError ?? null,
       action: `/admin/posts/${id}`,
       initialDoc: fromMarkdown(post.bodyMd),
+      previewUrl: previewUrlFor(request, space.subdomain, post.previewToken),
     });
   });
 
@@ -128,6 +157,9 @@ export default function postRoutes(fastify: FastifyInstance): void {
 
     const { tags: tagNames, ...rest } = parsed.data;
     await updatePost(id, { ...rest, tagNames });
+    // Sólo acá, nunca en /autosave (§0 de docs/slices/10.md): una revisión
+    // por guardado explícito del formulario completo, si el cuerpo cambió.
+    await recordRevisionIfChanged(id, rest.bodyMd);
     return reply.redirect(`/admin/posts/${id}`);
   });
 
@@ -162,6 +194,57 @@ export default function postRoutes(fastify: FastifyInstance): void {
     await publishPost(id);
     return reply.redirect(`/admin/posts/${id}`);
   });
+
+  fastify.post<{ Params: { id: string } }>("/:id/schedule", async (request, reply) => {
+    const { id } = idParamSchema.parse(request.params);
+    const parsed = scheduleFormSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send(parsed.error.message);
+    }
+
+    await schedulePost(id, parsed.data.publishAt);
+    return reply.redirect(`/admin/posts/${id}`);
+  });
+
+  fastify.post<{ Params: { id: string } }>("/:id/cancel-schedule", async (request, reply) => {
+    const { id } = idParamSchema.parse(request.params);
+    await cancelSchedule(id);
+    return reply.redirect(`/admin/posts/${id}`);
+  });
+
+  fastify.post<{ Params: { id: string } }>("/:id/rotate-preview-token", async (request, reply) => {
+    const { id } = idParamSchema.parse(request.params);
+    await rotatePreviewToken(id);
+    return reply.redirect(`/admin/posts/${id}`);
+  });
+
+  fastify.get<{ Params: { id: string } }>("/:id/revisions", async (request, reply) => {
+    const { id } = idParamSchema.parse(request.params);
+    const post = await getPost(id);
+    if (!post) {
+      return reply.code(404).send();
+    }
+
+    const revisions = await listRevisions(id);
+    await reply.view("admin/posts/revisions.eta", { post, revisions });
+  });
+
+  const revisionParamsSchema = z.object({ id: z.uuid(), revisionId: z.uuid() });
+
+  fastify.get<{ Params: { id: string; revisionId: string } }>(
+    "/:id/revisions/:revisionId/diff",
+    async (request, reply) => {
+      const { id, revisionId } = revisionParamsSchema.parse(request.params);
+
+      const [post, revision] = await Promise.all([getPost(id), getRevision(revisionId)]);
+      if (!post || !revision || revision.postId !== id) {
+        return reply.code(404).send();
+      }
+
+      const diffHtml = await diffAgainstPrevious(revisionId);
+      await reply.view("admin/posts/revision-diff.eta", { post, revision, diffHtml });
+    },
+  );
 
   fastify.post<{ Params: { id: string } }>("/:id/delete", async (request, reply) => {
     const { id } = idParamSchema.parse(request.params);

@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   countPublishedPosts,
   countPublishedPostsByCategory,
+  findPostByPreviewToken,
   listPublishedPosts,
   listPublishedPostsByCategory,
   listPublishedPostsForFeed,
@@ -19,7 +20,7 @@ import { stringsFor } from "../../i18n/dictionary.js";
 import { formatDateLong } from "../../i18n/dates.js";
 import { buildRssXml, type RssChannel } from "../../modules/feed/rss.js";
 import { buildSitemapIndexXml, buildUrlsetXml, type SitemapUrl } from "../../modules/feed/sitemap.js";
-import { absoluteMediaUrl, centralUrlFor, spaceUrlFor } from "./urls.js";
+import { absoluteMediaUrl, centralUrlFor, previewUrlFor, spaceUrlFor } from "./urls.js";
 
 const DEFAULT_ACCENT = "#5980a6";
 
@@ -245,4 +246,68 @@ export default function spaceIndexRoutes(lang: "es" | "en") {
       return reply.send(buildUrlsetXml(urls));
     });
   };
+}
+
+const previewParamsSchema = z.object({ token: z.uuid() });
+
+// Fuera de las fábricas spaceIndexRoutes/postRoutes (no depende de idioma:
+// el token ya identifica un post concreto con su propio lang). Sólo resuelve
+// dentro de un espacio, mismo patrón de guarda que /espacios o /t/{tag} al
+// revés.
+export function previewRoutes(fastify: FastifyInstance): void {
+  fastify.get<{ Params: { token: string } }>("/_preview/:token", async (request, reply) => {
+    if (!request.space) {
+      await reply.code(404).send();
+      return;
+    }
+
+    const parsedParams = previewParamsSchema.safeParse(request.params);
+    if (!parsedParams.success) {
+      await reply.code(404).send();
+      return;
+    }
+
+    const space = request.space;
+    const token = parsedParams.data.token;
+    const post = await findPostByPreviewToken(space.id, token);
+
+    if (!post) {
+      await reply.code(404).send();
+      return;
+    }
+
+    const lang = post.lang;
+    const prefix = lang === "en" ? "/en" : "";
+    const strings = stringsFor(lang);
+    const subdomain = `${space.subdomain}.${env.BASE_DOMAIN}`;
+    const cover = await resolveCoverImage(post.coverMediaId);
+
+    await reply.view("post.eta", {
+      cover,
+      title: `${post.title} · ${space.name}`,
+      spaceName: space.name,
+      subdomain,
+      accentColor: space.accentColor ?? DEFAULT_ACCENT,
+      centralUrl: centralUrlFor(request, lang),
+      htmlLang: strings.htmlLang,
+      strings,
+      prefix,
+      canonical: previewUrlFor(request, space.subdomain, token),
+      postUrl: `${subdomain}/_preview/${token}`,
+      heading: post.title,
+      lead: post.excerpt,
+      html: post.bodyHtml,
+      date: post.publishedAt ? formatDateLong(post.publishedAt, lang) : "Sin publicar",
+      readingMinutes: post.readingMinutes,
+      category: post.category,
+      tags: post.tags,
+      prev: null,
+      next: null,
+      previewNotice: post.status !== "published",
+      ogType: "article",
+      ogTitle: post.title,
+      ogDescription: post.excerpt,
+      ogImage: cover ? absoluteMediaUrl(request, cover.src) : null,
+    });
+  });
 }

@@ -32,6 +32,12 @@ export function postAbsoluteUrlFor(
   return `${request.protocol}://${subdomain}${portSuffix(request)}${suffix}/${slug}`;
 }
 
+// Sin prefijo de idioma (a diferencia de postAbsoluteUrlFor): el token ya
+// identifica un post concreto con su propio lang (docs/slices/10.md §0).
+export function previewUrlFor(request: FastifyRequest, subdomain: string, token: string): string {
+  return `${request.protocol}://${subdomain}.${env.BASE_DOMAIN}${portSuffix(request)}/_preview/${token}`;
+}
+
 // El sitio de media es el mismo para cualquier host que sirva la petición
 // (una sola instancia de @fastify/static bajo /media/): a diferencia de los
 // otros helpers, usa el host de la petición entrante tal cual, no BASE_DOMAIN
