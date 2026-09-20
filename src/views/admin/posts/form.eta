@@ -36,6 +36,9 @@
         </label>
         <div>
           <button type="button" data-editor-toggle>Ver Markdown</button>
+          <button type="button" data-insert-block="callout">Callout</button>
+          <button type="button" data-insert-block="gallery">Galería</button>
+          <button type="button" data-insert-block="youtube">YouTube</button>
         </div>
         <div id="editor-visual" data-initial-doc="<%= JSON.stringify(it.initialDoc) %>"></div>
         <label>

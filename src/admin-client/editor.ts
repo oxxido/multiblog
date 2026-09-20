@@ -12,6 +12,7 @@ interface EditorElements {
   textarea: HTMLTextAreaElement;
   visual: HTMLElement;
   toggle: HTMLButtonElement;
+  insertButtons: HTMLButtonElement[];
 }
 
 function readInitialDoc(visual: HTMLElement): TiptapDoc {
@@ -36,6 +37,9 @@ function setMode(mode: Mode, elements: EditorElements): void {
   elements.textarea.hidden = isVisual;
   elements.toggle.textContent = isVisual ? "Ver Markdown" : "Ver editor visual";
   elements.toggle.dataset.mode = mode;
+  for (const button of elements.insertButtons) {
+    button.disabled = !isVisual;
+  }
 }
 
 function currentMode(toggle: HTMLButtonElement): Mode {
@@ -61,6 +65,105 @@ function scheduleAutosave(postId: string, getBodyMd: () => string): () => void {
   };
 }
 
+// Extrae el id de video de un id suelto o de las formas de URL más comunes
+// de YouTube — el autor puede pegar cualquiera de las dos (docs/slices/06.md
+// §0). Si no matchea ningún patrón conocido, se asume que ya es el id.
+function extractYoutubeId(input: string): string {
+  const trimmed = input.trim();
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube(?:-nocookie)?\.com\/embed\/)([\w-]+)/,
+  ];
+  for (const pattern of patterns) {
+    const match = pattern.exec(trimmed);
+    if (match?.[1]) {
+      return match[1];
+    }
+  }
+  return trimmed;
+}
+
+interface PromptImage {
+  src: string;
+  alt: string;
+}
+
+// Una URL por línea, `alt` opcional separado por `|` (docs/slices/06.md §0):
+// `https://.../a.jpg|Un gato`. Líneas vacías se ignoran.
+function parseGalleryPrompt(input: string): PromptImage[] {
+  return input
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => {
+      const [src, alt] = line.split("|");
+      return { src: (src ?? "").trim(), alt: (alt ?? "").trim() };
+    })
+    .filter((image) => image.src.length > 0);
+}
+
+// Insertar siempre al final del documento, no en la posición del cursor:
+// `callout` acepta sólo `paragraph+` adentro, así que insertarlo dentro de
+// otro callout (o con el cursor todavía posicionado ahí después de una
+// inserción anterior) no encaja en ese esquema y TipTap lo descarta en
+// silencio. Insertar al final es siempre una posición de bloque válida.
+function insertBlockAtEnd(editor: Editor, node: Record<string, unknown>): void {
+  editor.chain().focus().insertContentAt(editor.state.doc.content.size, node).run();
+}
+
+// La validación real de los atributos es la de Zod en el registro, del lado
+// servidor, al guardar (docs/slices/06.md §0) — acá sólo se evita insertar
+// nada si el prompt vuelve vacío o cancelado.
+function insertCallout(editor: Editor): void {
+  const type = window.prompt("Tipo de callout (info, warning o success):", "info");
+  if (!type || type.trim().length === 0) {
+    return;
+  }
+  insertBlockAtEnd(editor, {
+    type: "callout",
+    attrs: { type: type.trim() },
+    content: [{ type: "paragraph" }],
+  });
+}
+
+function insertGallery(editor: Editor): void {
+  const raw = window.prompt("Una URL de imagen por línea (alt opcional después de '|'):", "");
+  if (!raw) {
+    return;
+  }
+  const images = parseGalleryPrompt(raw);
+  if (images.length === 0) {
+    return;
+  }
+  insertBlockAtEnd(editor, { type: "gallery", attrs: { images, cols: 2 } });
+}
+
+function insertYoutube(editor: Editor): void {
+  const raw = window.prompt("Id o URL de YouTube:", "");
+  if (!raw || raw.trim().length === 0) {
+    return;
+  }
+  const videoId = extractYoutubeId(raw);
+  insertBlockAtEnd(editor, { type: "youtube", attrs: { videoId, title: "Video de YouTube" } });
+}
+
+function mountToolbar(editor: Editor, buttons: HTMLButtonElement[]): void {
+  const inserters: Record<string, (editor: Editor) => void> = {
+    callout: insertCallout,
+    gallery: insertGallery,
+    youtube: insertYoutube,
+  };
+  for (const button of buttons) {
+    const kind = button.dataset.insertBlock;
+    const insert = kind ? inserters[kind] : undefined;
+    if (!insert) {
+      continue;
+    }
+    button.addEventListener("click", () => {
+      insert(editor);
+    });
+  }
+}
+
 // Alternar no cambia qué envía el <form>: el textarea con name="bodyMd"
 // sigue siendo el campo real (docs/slices/05.md §0). Este módulo sólo lo
 // mantiene sincronizado con lo que la persona ve.
@@ -68,6 +171,7 @@ function mountEditor(): void {
   const textarea = document.querySelector<HTMLTextAreaElement>('textarea[name="bodyMd"]');
   const visual = document.getElementById("editor-visual");
   const toggle = document.querySelector<HTMLButtonElement>("[data-editor-toggle]");
+  const insertButtons = [...document.querySelectorAll<HTMLButtonElement>("[data-insert-block]")];
   const postId = textarea?.form?.dataset.postId;
   if (
     !(textarea instanceof HTMLTextAreaElement) ||
@@ -79,7 +183,7 @@ function mountEditor(): void {
     return;
   }
 
-  const elements: EditorElements = { textarea, visual, toggle };
+  const elements: EditorElements = { textarea, visual, toggle, insertButtons };
 
   const editor = new Editor({
     element: visual,
@@ -87,6 +191,7 @@ function mountEditor(): void {
     content: readInitialDoc(visual),
   });
 
+  mountToolbar(editor, insertButtons);
   setMode("visual", elements);
 
   const autosave = scheduleAutosave(postId, () =>
