@@ -4,7 +4,7 @@ import path from "node:path";
 import { desc, eq, like } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { media, posts, siteSettings, spaces } from "../../db/schema.js";
-import { widthsFor } from "./derivatives.js";
+import { buildResponsiveImage, widthsFor, type ResponsiveImage } from "./derivatives.js";
 import { derivativeFilePath, generateDerivatives, originalFilePath } from "./storage.js";
 
 const ACCEPTED_MIME_TO_EXT: Record<string, string> = {
@@ -72,6 +72,46 @@ export async function uploadMedia(buffer: Buffer, filename: string, mime: string
   }
 
   return row;
+}
+
+// Resuelve una sola portada (post, espacio o sitio, T8) a su forma
+// responsive; null cuando no hay cover_media_id o la fila ya no existe
+// (imagen borrada) — la plantilla cae a la variante "sin foto" existente.
+export async function resolveCoverImage(mediaId: string | null): Promise<ResponsiveImage | null> {
+  if (!mediaId) {
+    return null;
+  }
+
+  const [row] = await db
+    .select({ id: media.id, width: media.width, height: media.height })
+    .from(media)
+    .where(eq(media.id, mediaId))
+    .limit(1);
+
+  if (!row || row.width === null || row.height === null) {
+    return null;
+  }
+
+  return buildResponsiveImage({ id: row.id, width: row.width, height: row.height });
+}
+
+const SITE_SETTINGS_ID = 1;
+
+export async function getSiteCoverMediaId(): Promise<string | null> {
+  const [row] = await db
+    .select({ coverMediaId: siteSettings.coverMediaId })
+    .from(siteSettings)
+    .where(eq(siteSettings.id, SITE_SETTINGS_ID))
+    .limit(1);
+  return row?.coverMediaId ?? null;
+}
+
+export async function setSiteCoverMediaId(coverMediaId: string | null): Promise<void> {
+  await db.update(siteSettings).set({ coverMediaId }).where(eq(siteSettings.id, SITE_SETTINGS_ID));
+}
+
+export async function resolveSiteCoverImage(): Promise<ResponsiveImage | null> {
+  return resolveCoverImage(await getSiteCoverMediaId());
 }
 
 export interface MediaUsage {

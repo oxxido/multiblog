@@ -17,6 +17,11 @@
   --sp: #5980a6;
   --sp-deep: color-mix(in oklab, var(--sp) 72%, #101110);
   --sp-line: color-mix(in oklab, var(--sp) 32%, #f2f2f3);
+
+  /* Todas las fotos van en blanco y negro (Design.md §1), expuesto acá
+     para poder cambiarlo globalmente. */
+  --ph: grayscale(1) contrast(1.08);
+  --ph-gradient: linear-gradient(180deg, rgba(15, 16, 17, 0.12) 0%, rgba(15, 16, 17, 0.78) 100%);
 }
 
 *,
@@ -157,8 +162,32 @@ img {
   background: var(--color-bg);
   color: var(--color-text);
 }
-/* Design.md §2.1 asume foto (variante con foto, S7); sin media todavía se
-   degrada a fondo papel y texto en tinta, misma altura y estructura. */
+/* Sin foto: fondo papel, texto en tinta. Con foto (S7, Design.md §2.1):
+   imagen a sangre en blanco y negro detrás, degradado y texto en blanco. */
+.central-hero.has-cover {
+  color: #fff;
+}
+.central-hero__photo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: var(--ph);
+}
+.central-hero.has-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--ph-gradient);
+}
+.central-hero__nav,
+.central-hero > div:last-child {
+  position: relative;
+  z-index: 2;
+}
 .central-hero__nav {
   display: flex;
   align-items: baseline;
@@ -376,10 +405,31 @@ img {
   background: var(--color-bg);
   color: var(--color-text);
 }
-/* Sin foto (camino real hoy, docs/slices/04.md §0): fondo papel, filete y
-   H1 en tinta. La variante con foto (S7) reemplaza el fondo por la imagen
-   y pasa filete/título/entradilla a blanco sobre el degradado. */
+/* Sin foto: fondo papel, filete y H1 en tinta. Con foto (S7): imagen a
+   sangre en blanco y negro detrás, degradado y filete/título/entradilla en
+   blanco. */
+.space-hero.has-cover {
+  color: #fff;
+}
+.space-hero__photo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: var(--ph);
+}
+.space-hero.has-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--ph-gradient);
+}
 .space-hero__inner {
+  position: relative;
+  z-index: 2;
   width: 100%;
 }
 .space-hero__rule {
@@ -498,8 +548,16 @@ img {
   height: 248px;
   background: var(--color-bg);
 }
-/* Sin foto (camino real hoy): fondo papel. Con foto (S7): imagen a sangre
-   en blanco y negro, misma altura y misma franja de --sp debajo. */
+/* Sin foto: fondo papel. Con foto (S7): imagen a sangre en blanco y negro,
+   misma altura, sin texto encima (Design.md §3: "el recorte es libre") y
+   misma franja de --sp debajo. */
+.post-panorama__photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: var(--ph);
+}
 .post-panorama__rule {
   height: 5px;
   background: var(--sp);

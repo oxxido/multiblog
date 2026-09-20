@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "esbuild src/admin-client/editor.ts src/admin-client/picker.ts --bundle --outdir=public/admin --format=esm --watch & tsx watch --env-file-if-exists=.env.local src/server.ts",
-    "build": "tsc -p tsconfig.json && esbuild src/admin-client/editor.ts src/admin-client/picker.ts --bundle --outdir=public/admin --format=esm --minify",
+    "dev": "esbuild src/admin-client/editor.ts src/admin-client/picker.ts src/admin-client/coverPicker.ts --bundle --outdir=public/admin --format=esm --watch & tsx watch --env-file-if-exists=.env.local src/server.ts",
+    "build": "tsc -p tsconfig.json && esbuild src/admin-client/editor.ts src/admin-client/picker.ts src/admin-client/coverPicker.ts --bundle --outdir=public/admin --format=esm --minify",
     "start": "node dist/server.js",
     "test": "node --import tsx --test $(find tests -name '*.test.ts' | sort)",
     "test:roundtrip": "node --import tsx --test $(find tests/roundtrip -name '*.test.ts' | sort)",

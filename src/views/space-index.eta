@@ -9,7 +9,18 @@
       <div>
         <%~ include("partials/space-nav", { spaceName: it.spaceName, centralUrl: it.centralUrl }) %>
 
-        <div class="space-hero">
+        <div class="space-hero<% if (it.cover) { %> has-cover<% } %>">
+          <% if (it.cover) { %>
+          <img
+            class="space-hero__photo"
+            src="<%= it.cover.src %>"
+            srcset="<%= it.cover.srcset %>"
+            width="<%= it.cover.width %>"
+            height="<%= it.cover.height %>"
+            alt=""
+            loading="lazy"
+          />
+          <% } %>
           <div class="space-hero__inner">
             <div class="space-hero__rule"></div>
             <h1><%= it.spaceName %></h1>

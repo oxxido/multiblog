@@ -24,6 +24,7 @@ export interface PostDetail {
   bodyMd: string;
   status: "draft" | "scheduled" | "published";
   categoryIds: string[];
+  coverMediaId: string | null;
 }
 
 export interface PostInput {
@@ -33,6 +34,7 @@ export interface PostInput {
   excerpt: string | null;
   bodyMd: string;
   categoryIds: string[];
+  coverMediaId: string | null;
 }
 
 // Sólo asocia categorías del mismo espacio que el post (invariante 2): una
@@ -84,6 +86,7 @@ export async function getPost(id: string): Promise<PostDetail | null> {
       excerpt: posts.excerpt,
       bodyMd: posts.bodyMd,
       status: posts.status,
+      coverMediaId: posts.coverMediaId,
     })
     .from(posts)
     .where(eq(posts.id, id))
@@ -113,6 +116,7 @@ export async function createPost(input: PostInput): Promise<{ id: string }> {
       excerpt: input.excerpt,
       bodyMd: input.bodyMd,
       bodyHtml,
+      coverMediaId: input.coverMediaId,
     })
     .returning({ id: posts.id });
 
@@ -156,6 +160,7 @@ export async function updatePost(id: string, input: PostInput): Promise<void> {
       excerpt: input.excerpt,
       bodyMd: input.bodyMd,
       bodyHtml,
+      coverMediaId: input.coverMediaId,
       updatedAt: new Date(),
     })
     .where(eq(posts.id, id));
@@ -220,6 +225,7 @@ export interface PublishedPostView {
   tags: PostTagRef[];
   prev: AdjacentPostRef | null;
   next: AdjacentPostRef | null;
+  coverMediaId: string | null;
 }
 
 export async function findPublishedPost(
@@ -235,6 +241,7 @@ export async function findPublishedPost(
       bodyMd: posts.bodyMd,
       bodyHtml: posts.bodyHtml,
       publishedAt: posts.publishedAt,
+      coverMediaId: posts.coverMediaId,
     })
     .from(posts)
     .where(
@@ -304,6 +311,7 @@ export async function findPublishedPost(
     tags: tagRows,
     prev: prevRow ?? null,
     next: nextRow ?? null,
+    coverMediaId: row.coverMediaId,
   };
 }
 

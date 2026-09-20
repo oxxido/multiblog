@@ -8,9 +8,15 @@ import {
   listSpaces,
   updateSpace,
 } from "../../modules/taxonomy/spaces.js";
+import { resolveCoverImage } from "../../modules/media/media.js";
 
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const SLUG_MESSAGE = "Sólo minúsculas, números y guiones";
+
+const coverMediaIdField = z.preprocess(
+  (value) => (typeof value === "string" && value.trim().length > 0 ? value : null),
+  z.uuid().nullable(),
+);
 
 const spaceFormSchema = z.object({
   slug: z.string().min(1).regex(SLUG_PATTERN, SLUG_MESSAGE),
@@ -18,6 +24,7 @@ const spaceFormSchema = z.object({
   name: z.string().min(1),
   description: z.string().trim().transform((value) => (value.length > 0 ? value : null)),
   accentColor: z.string().trim().transform((value) => (value.length > 0 ? value : null)),
+  coverMediaId: coverMediaIdField,
 });
 
 const idParamSchema = z.object({ id: z.uuid() });
@@ -35,7 +42,7 @@ export default function spaceRoutes(fastify: FastifyInstance): void {
   });
 
   fastify.get("/new", async (_request, reply) => {
-    await reply.view("admin/spaces/form.eta", { space: null, action: "/admin/espacios" });
+    await reply.view("admin/spaces/form.eta", { space: null, cover: null, action: "/admin/espacios" });
   });
 
   fastify.post("/", async (request, reply) => {
@@ -63,7 +70,8 @@ export default function spaceRoutes(fastify: FastifyInstance): void {
       return reply.code(404).send();
     }
 
-    await reply.view("admin/spaces/form.eta", { space, action: `/admin/espacios/${id}` });
+    const cover = await resolveCoverImage(space.coverMediaId);
+    await reply.view("admin/spaces/form.eta", { space, cover, action: `/admin/espacios/${id}` });
   });
 
   fastify.post<{ Params: { id: string } }>("/:id", async (request, reply) => {

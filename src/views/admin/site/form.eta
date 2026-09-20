@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Sitio · Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <header>
+      <a href="/admin/posts">← Posts</a>
+    </header>
+    <main>
+      <h1>Sitio</h1>
+      <form method="post" action="/admin/sitio">
+        <%~ include("../../partials/cover-field", { cover: it.cover, value: it.coverMediaId }) %>
+        <button type="submit">Guardar</button>
+      </form>
+    </main>
+    <script type="module" src="/admin/static/coverPicker.js"></script>
+  </body>
+</html>

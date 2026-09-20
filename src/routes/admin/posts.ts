@@ -12,6 +12,7 @@ import {
 import { listActiveSpaceOptions, listSpaceOptionsForPost } from "../../modules/taxonomy/spaces.js";
 import { listCategories } from "../../modules/taxonomy/categories.js";
 import { fromMarkdown } from "../../markdown/tiptap/fromMarkdown.js";
+import { resolveCoverImage } from "../../modules/media/media.js";
 
 // Checkboxes repetidos llegan como array; ninguno tildado llega ausente.
 function toArray(value: unknown): unknown[] {
@@ -30,6 +31,11 @@ const slugField = z
 
 const excerptField = z.string().trim().transform((value) => (value.length > 0 ? value : null));
 
+const coverMediaIdField = z.preprocess(
+  (value) => (typeof value === "string" && value.trim().length > 0 ? value : null),
+  z.uuid().nullable(),
+);
+
 // Paso mínimo de creación (T5 de docs/slices/05.md): sin cuerpo ni
 // categorías todavía. El post se crea con body_md vacío y se termina de
 // escribir en /admin/posts/{id}, que ya es la pantalla de edición completa.
@@ -47,6 +53,7 @@ const editPostFormSchema = z.object({
   excerpt: excerptField,
   bodyMd: z.string().min(1),
   categoryIds: categoryIdsField,
+  coverMediaId: coverMediaIdField,
 });
 
 const autosaveBodySchema = z.object({ bodyMd: z.string() });
@@ -70,7 +77,7 @@ export default function postRoutes(fastify: FastifyInstance): void {
       return reply.code(400).send(parsed.error.message);
     }
 
-    const { id } = await createPost({ ...parsed.data, bodyMd: "", categoryIds: [] });
+    const { id } = await createPost({ ...parsed.data, bodyMd: "", categoryIds: [], coverMediaId: null });
     return reply.redirect(`/admin/posts/${id}`);
   });
 
@@ -82,15 +89,17 @@ export default function postRoutes(fastify: FastifyInstance): void {
       return reply.code(404).send();
     }
 
-    const [spaceOptions, categoryOptions] = await Promise.all([
+    const [spaceOptions, categoryOptions, cover] = await Promise.all([
       listSpaceOptionsForPost(post.spaceId),
       listCategories(),
+      resolveCoverImage(post.coverMediaId),
     ]);
 
     await reply.view("admin/posts/form.eta", {
       post,
       spaceOptions,
       categoryOptions,
+      cover,
       action: `/admin/posts/${id}`,
       initialDoc: fromMarkdown(post.bodyMd),
     });

@@ -1,0 +1,11 @@
+<div data-cover-field>
+  <img
+    data-cover-preview
+    src="<%= it.cover ? it.cover.src : "" %>"
+    alt=""
+    width="200"
+    <%= it.cover ? "" : "hidden" %>
+  />
+  <input type="hidden" name="coverMediaId" data-cover-input value="<%= it.value ? it.value : "" %>" />
+  <button type="button" data-cover-picker>Elegir portada</button>
+</div>
