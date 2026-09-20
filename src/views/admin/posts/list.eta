@@ -23,6 +23,7 @@
           <tr>
             <th>Título</th>
             <th>Espacio</th>
+            <th>Idioma</th>
             <th>Estado</th>
             <th>Actualizado</th>
           </tr>
@@ -30,8 +31,12 @@
         <tbody>
           <% it.items.forEach(function(item) { %>
           <tr>
-            <td><a href="/admin/posts/<%= item.id %>"><%= item.title %></a></td>
+            <td>
+              <a href="/admin/posts/<%= item.id %>"><%= item.title %></a>
+              <% if (item.isStale) { %> (traducción desactualizada) <% } %>
+            </td>
             <td><%= item.spaceName %></td>
+            <td><%= item.lang %></td>
             <td><%= item.status %></td>
             <td><%= item.updatedAt.toISOString() %></td>
           </tr>

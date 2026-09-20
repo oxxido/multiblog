@@ -35,6 +35,7 @@ export interface PostDetail {
   translationGroupId: string;
   sourcePostId: string | null;
   sourceUpdatedAt: Date | null;
+  updatedAt: Date;
 }
 
 export interface PostInput {
@@ -118,6 +119,7 @@ export async function getPost(id: string): Promise<PostDetail | null> {
       translationGroupId: posts.translationGroupId,
       sourcePostId: posts.sourcePostId,
       sourceUpdatedAt: posts.sourceUpdatedAt,
+      updatedAt: posts.updatedAt,
     })
     .from(posts)
     .where(eq(posts.id, id))
@@ -529,6 +531,8 @@ export interface TranslationSibling {
   id: string;
   slug: string;
   status: "draft" | "scheduled" | "published";
+  lang: "es" | "en";
+  translatedAt: Date | null;
 }
 
 // El grupo de traducción sólo tiene es/en (docs/I18N.md §1): el hermano de
@@ -538,7 +542,7 @@ export async function findTranslationSibling(
   excludeId: string,
 ): Promise<TranslationSibling | null> {
   const [row] = await db
-    .select({ id: posts.id, slug: posts.slug, status: posts.status })
+    .select({ id: posts.id, slug: posts.slug, status: posts.status, lang: posts.lang, translatedAt: posts.translatedAt })
     .from(posts)
     .where(and(eq(posts.translationGroupId, translationGroupId), ne(posts.id, excludeId)))
     .limit(1);
