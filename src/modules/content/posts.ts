@@ -246,6 +246,8 @@ export interface AdjacentPostRef {
 }
 
 export interface PublishedPostView {
+  id: string;
+  translationGroupId: string;
   title: string;
   excerpt: string | null;
   bodyHtml: string;
@@ -269,6 +271,7 @@ export async function findPublishedPost(
   const [row] = await db
     .select({
       id: posts.id,
+      translationGroupId: posts.translationGroupId,
       title: posts.title,
       excerpt: posts.excerpt,
       bodyMd: posts.bodyMd,
@@ -335,6 +338,8 @@ export async function findPublishedPost(
     .limit(1);
 
   return {
+    id: row.id,
+    translationGroupId: row.translationGroupId,
     title: row.title,
     excerpt: row.excerpt,
     bodyHtml: row.bodyHtml,
@@ -346,6 +351,30 @@ export async function findPublishedPost(
     next: nextRow ?? null,
     coverMediaId: row.coverMediaId,
   };
+}
+
+export interface PublishedTranslationSibling {
+  lang: "es" | "en";
+  slug: string;
+}
+
+// El hermano publicado del otro idioma dentro del mismo grupo, para armar
+// hreflang/canonical/x-default en el sitio público (docs/slices/08.md T8).
+// A diferencia de findTranslationSibling (admin), acá sólo interesa un
+// hermano que ya sea visible al público.
+export async function findPublishedTranslationSibling(
+  translationGroupId: string,
+  excludeId: string,
+): Promise<PublishedTranslationSibling | null> {
+  const [row] = await db
+    .select({ lang: posts.lang, slug: posts.slug })
+    .from(posts)
+    .where(
+      and(eq(posts.translationGroupId, translationGroupId), ne(posts.id, excludeId), eq(posts.status, "published")),
+    )
+    .limit(1);
+
+  return row ?? null;
 }
 
 export interface PostListItem {

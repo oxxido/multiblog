@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="<%= it.htmlLang %>" style="--sp: <%= it.accentColor %>;">
   <head>
-    <%~ include("partials/head", { title: it.title }) %>
+    <%~ include("partials/head", { title: it.title, canonical: it.canonical, alternates: it.alternates }) %>
   </head>
   <body>
     <div class="space-shell">

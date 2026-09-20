@@ -1,5 +1,9 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
-import { findCurrentSlugForRedirect, findPublishedPost } from "../../modules/content/posts.js";
+import {
+  findCurrentSlugForRedirect,
+  findPublishedPost,
+  findPublishedTranslationSibling,
+} from "../../modules/content/posts.js";
 import { resolveCoverImage } from "../../modules/media/media.js";
 import { env } from "../../config/env.js";
 import { stringsFor } from "../../i18n/dictionary.js";
@@ -12,6 +16,15 @@ function centralUrlFor(request: FastifyRequest, lang: "es" | "en"): string {
   const port = host.split(":")[1];
   const suffix = lang === "en" ? "/en" : "";
   return `${request.protocol}://${env.BASE_DOMAIN}${port ? `:${port}` : ""}${suffix}`;
+}
+
+// Un post y su hermano de traducción viven siempre en el mismo espacio
+// (docs/I18N.md §1): alcanza con cambiar el prefijo /en, nunca el subdominio.
+function postAbsoluteUrlFor(request: FastifyRequest, subdomain: string, postLang: "es" | "en", slug: string): string {
+  const host = request.headers.host ?? "";
+  const port = host.split(":")[1];
+  const suffix = postLang === "en" ? "/en" : "";
+  return `${request.protocol}://${subdomain}${port ? `:${port}` : ""}${suffix}/${slug}`;
 }
 
 export default function postRoutes(lang: "es" | "en") {
@@ -44,6 +57,19 @@ export default function postRoutes(lang: "es" | "en") {
       const subdomain = `${space.subdomain}.${env.BASE_DOMAIN}`;
       const cover = await resolveCoverImage(post.coverMediaId);
 
+      const sibling = await findPublishedTranslationSibling(post.translationGroupId, post.id);
+      const canonical = postAbsoluteUrlFor(request, subdomain, lang, slug);
+      const siblingHref = sibling ? postAbsoluteUrlFor(request, subdomain, sibling.lang, sibling.slug) : null;
+
+      const alternates: { hreflang: string; href: string }[] = [{ hreflang: lang, href: canonical }];
+      if (sibling && siblingHref) {
+        alternates.push({ hreflang: sibling.lang, href: siblingHref });
+      }
+      // x-default apunta siempre a la versión en español, sea el post actual
+      // o su hermano (docs/slices/08.md §0).
+      const spanishHref = lang === "es" ? canonical : sibling?.lang === "es" && siblingHref ? siblingHref : canonical;
+      alternates.push({ hreflang: "x-default", href: spanishHref });
+
       await reply.view("post.eta", {
         cover,
         title: `${post.title} · ${space.name}`,
@@ -54,6 +80,8 @@ export default function postRoutes(lang: "es" | "en") {
         htmlLang: strings.htmlLang,
         strings,
         prefix,
+        canonical,
+        alternates,
         postUrl: `${subdomain}${prefix}/${slug}`,
         heading: post.title,
         lead: post.excerpt,
