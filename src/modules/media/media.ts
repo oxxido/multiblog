@@ -24,6 +24,10 @@ export class MediaValidationError extends Error {}
 export interface MediaSummary {
   id: string;
   filename: string;
+  // "{id}.{ext}", el nombre real en MEDIA_DIR (T1): lo que el picker (T4)
+  // necesita para armar la URL /media/{path} que va literal en el body_md
+  // de una imagen suelta o de gallery — filename es sólo para mostrar.
+  path: string;
   mime: string;
   width: number | null;
   height: number | null;
@@ -34,6 +38,7 @@ export interface MediaSummary {
 const summaryColumns = {
   id: media.id,
   filename: media.filename,
+  path: media.path,
   mime: media.mime,
   width: media.width,
   height: media.height,

@@ -1,5 +1,8 @@
 export interface PickedImage {
   id: string;
+  // "{id}.{ext}" real en MEDIA_DIR: lo que arma /media/{path} para insertar
+  // en el cuerpo (imagen suelta o gallery, T9) — filename es sólo para UI.
+  path: string;
   width: number;
   height: number;
   filename: string;
@@ -15,6 +18,7 @@ export interface MediaPickedMessage {
 function readImage(el: HTMLElement): PickedImage {
   return {
     id: el.dataset.mediaId ?? "",
+    path: el.dataset.path ?? "",
     width: Number(el.dataset.width ?? "0"),
     height: Number(el.dataset.height ?? "0"),
     filename: el.dataset.filename ?? "",

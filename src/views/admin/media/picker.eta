@@ -17,6 +17,7 @@
         <% it.items.forEach(function(item) { %>
         <li
           data-media-id="<%= item.id %>"
+          data-path="<%= item.path %>"
           data-width="<%= item.width %>"
           data-height="<%= item.height %>"
           data-filename="<%= item.filename %>"
