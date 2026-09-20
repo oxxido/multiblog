@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { db } from "./client.js";
-import { spaces, posts, users } from "./schema.js";
+import { spaces, posts, users, siteSettings } from "./schema.js";
 import { hashPassword } from "../modules/auth/password.js";
 import { renderMarkdown } from "../markdown/pipeline.js";
 
@@ -111,6 +111,11 @@ async function seed(): Promise<void> {
       target: users.email,
       set: { passwordHash: hashPassword(seedEnv.ADMIN_PASSWORD) },
     });
+
+  await db
+    .insert(siteSettings)
+    .values({ id: 1, coverMediaId: null })
+    .onConflictDoUpdate({ target: siteSettings.id, set: {} });
 }
 
 await seed();
