@@ -44,6 +44,7 @@
     "drizzle-orm": "^0.45.2",
     "eta": "^4.6.0",
     "fastify": "^5.12.5",
+    "openai": "^7.19.0",
     "postgres": "^3.4.9",
     "rehype-sanitize": "^6.0.0",
     "rehype-stringify": "^10.0.1",
