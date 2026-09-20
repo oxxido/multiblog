@@ -1,7 +1,8 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import sharp from "sharp";
-import { env } from "../../config/env.js";
+// Puro: cero I/O, cero dependencia de configuración. gallery.ts (T7) y
+// mediaImages.ts (T6) importan sólo este archivo — ninguno de los dos debe
+// arrastrar `env.ts` (MEDIA_DIR), porque eso obligaría a tests/roundtrip/
+// (fromMarkdown/toMarkdown, sin servidor ni base) a fijar variables de
+// entorno que no les conciernen. El disco vive en storage.ts.
 
 // Anchos de derivado fijos en código (docs/slices/07.md §0): desde el frame
 // más chico de `gallery` a 4 columnas hasta una cabecera a sangre en un
@@ -19,7 +20,7 @@ export function widthsFor(originalWidth: number): number[] {
   return applicable.length > 0 ? applicable : [originalWidth];
 }
 
-function derivativePath(id: string, width: number): string {
+export function derivativeUrl(id: string, width: number): string {
   return `/media/${id}-${String(width)}.webp`;
 }
 
@@ -47,8 +48,8 @@ export function buildResponsiveImage({ id, width, height }: MediaDimensions): Re
   }
 
   return {
-    src: derivativePath(id, largest),
-    srcset: widths.map((derivativeWidth) => `${derivativePath(id, derivativeWidth)} ${String(derivativeWidth)}w`).join(", "),
+    src: derivativeUrl(id, largest),
+    srcset: widths.map((derivativeWidth) => `${derivativeUrl(id, derivativeWidth)} ${String(derivativeWidth)}w`).join(", "),
     width,
     height,
   };
@@ -58,40 +59,7 @@ export function buildResponsiveImage({ id, width, height }: MediaDimensions): Re
 // listado/picker (T4), donde importa el peso de la grilla, no la nitidez.
 export function buildThumbnail(id: string, originalWidth: number | null): string {
   const widths = widthsFor(originalWidth ?? MIN_WIDTH);
-  return derivativePath(id, widths[0] ?? MIN_WIDTH);
-}
-
-export function derivativeFilePath(id: string, width: number): string {
-  return path.join(env.MEDIA_DIR, `${id}-${String(width)}.webp`);
-}
-
-export function originalFilePath(id: string, ext: string): string {
-  return path.join(env.MEDIA_DIR, `${id}.${ext}`);
-}
-
-// Lee las dimensiones del original con sharp, lo escribe tal cual a
-// MEDIA_DIR (SPEC.md §8: el original se conserva para pg_dump + volumen,
-// nunca se enlaza desde HTML) y escribe un .webp por cada ancho aplicable.
-export async function generateDerivatives(
-  buffer: Buffer,
-  id: string,
-  ext: string,
-): Promise<{ width: number; height: number }> {
-  const image = sharp(buffer);
-  const metadata = await image.metadata();
-  if (!metadata.width || !metadata.height) {
-    throw new Error(`No se pudieron leer las dimensiones de la imagen ${id}`);
-  }
-  const { width, height } = metadata;
-
-  await mkdir(env.MEDIA_DIR, { recursive: true });
-  await writeFile(originalFilePath(id, ext), buffer);
-
-  for (const derivativeWidth of widthsFor(width)) {
-    await image.clone().resize({ width: derivativeWidth }).webp().toFile(derivativeFilePath(id, derivativeWidth));
-  }
-
-  return { width, height };
+  return derivativeUrl(id, widths[0] ?? MIN_WIDTH);
 }
 
 // Extrae el uuid de una URL `/media/{id}.ext`, o null si no matchea

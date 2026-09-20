@@ -4,7 +4,8 @@ import path from "node:path";
 import { desc, eq, like } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { media, posts, siteSettings, spaces } from "../../db/schema.js";
-import { derivativeFilePath, generateDerivatives, originalFilePath, widthsFor } from "./derivatives.js";
+import { widthsFor } from "./derivatives.js";
+import { derivativeFilePath, generateDerivatives, originalFilePath } from "./storage.js";
 
 const ACCEPTED_MIME_TO_EXT: Record<string, string> = {
   "image/jpeg": "jpg",
