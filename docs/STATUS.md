@@ -303,13 +303,73 @@ S3–S6: el puerto 3000 ya lo sirve `multiblog-prod-app-1`). Redeploy
 pendiente de que el usuario lo pida — necesita, además del `git pull`
 habitual, que el volumen `media_data` nuevo quede disponible para `app`.
 
+## Slice hecha (código), pendiente de redeploy
+
+**S8 — Bilingüe.** Implementada según `docs/slices/08.md` (T1–T9) en la
+rama `S8-bilingue`, validada contra el Postgres de dev. `pnpm lint &&
+pnpm typecheck && pnpm test` en verde (83 tests, 13 nuevos: 6 unit en
+`tests/unit/translation/validate.test.ts` y 7 de aceptación en
+`tests/acceptance/s8.test.ts` — traducir un post con galería y bloque de
+código preserva la estructura y aparece como borrador sólo visible tras
+publicarse, una traducción con una directiva de menos se rechaza sin
+crear fila, editar el original tras traducir marca la traducción como
+desactualizada en el admin, `/en/`, `/en/{slug}` y `/en/c/{categoria}`
+resuelven sobre un espacio y sobre el dominio central, un post sin
+traducir no aparece en el índice del espacio en `/en/` ni en la home
+central en inglés, y un post con ambas versiones publicadas lleva
+hreflang recíproco y `x-default` en las dos páginas).
+
+`openai` (D16) nueva dependencia, apuntada a `https://openrouter.ai/api/v1`,
+modelo `openrouter/auto` fijo en código. `src/modules/translation/` trae
+`openrouter.ts` (`translateContent`, system prompt con las reglas de
+`docs/I18N.md` §5), `validate.ts` (`extractDirectiveShape`/
+`directiveShapesMatch`, sin depender del registro de bloques) y
+`translate.ts` (`translatePost`, orquesta llamada + validación +
+persistencia). `src/i18n/` (nuevo) trae `dictionary.ts` y `dates.ts`,
+reemplazando el copy y los arreglos de meses fijos en español de las tres
+rutas públicas y sus plantillas. `spaceIndexRoutes`/`postRoutes` pasan de
+plugins de Fastify a fábricas `(lang) => (fastify) => void`;
+`routes/public/index.ts` registra las cuatro combinaciones es/en ×
+espacio/post — el routing de `/en/` que `docs/I18N.md` §7 le había
+asignado a S3 y nunca se implementó ahí (D16). Admin: botón "Traducir al
+inglés" (sólo `lang === "es"` y `status === "published"`), enlace al
+hermano, aviso de traducción desactualizada y columna de idioma en el
+listado. Sitio público: `hreflang`/`canonical`/`x-default` en `post.eta`
+vía `partials/head.eta`.
+
+Ajustes que no estaban en el desglose original y aparecieron al
+implementar:
+
+- **Sin `unist-util-visit`.** `validate.ts` recorre el árbol de mdast a
+  mano en vez de sumar esa dependencia: es la única función que necesita
+  recorrer el árbol completo, y `docs/slices/08.md` §0 ya había cerrado la
+  lista de altas al stack en esta slice a `openai` únicamente.
+- **`findTranslationSibling` devuelve también `lang` y `translatedAt`**,
+  no sólo `id`/`slug`/`status` como sugería la firma de T6: el admin
+  necesita esos dos campos para calcular si la traducción quedó
+  desactualizada sin una segunda consulta.
+- **`PostDetail` gana `updatedAt`** (no estaba en la lista de T6) por el
+  mismo motivo: la ruta de edición ya tiene la marca de tiempo del post
+  que está mostrando y la reutiliza para esa comparación, en vez de volver
+  a pedirla.
+- **`PublishedPostView` gana `id`/`translationGroupId`**: `routes/public/post.ts`
+  los necesita para llamar a `findPublishedTranslationSibling` (T8) sin una
+  consulta aparte.
+- **`.env.example`** se tocó a mano fuera de este flujo (permisos del
+  proyecto bloquean su lectura/escritura automática) para sumar
+  `OPENROUTER_API_KEY`.
+
+**No se tocó el stack de producción de esta máquina** (mismo motivo que
+S3–S7: el puerto 3000 ya lo sirve `multiblog-prod-app-1`). Redeploy
+pendiente de que el usuario lo pida — necesita, además del `git pull`
+habitual, la variable `OPENROUTER_API_KEY` en el entorno de producción
+para que el botón de traducción funcione (es opcional en `env.ts`, así que
+el resto del sitio sigue andando sin ella).
+
 ## Próxima
 
-**S8 — Bilingüe.** En planificación, desglose completo en
-`docs/slices/08.md` (`docs/PLAN.md` S8, `docs/I18N.md` §7, D13). UI de
-traducción sobre el esquema que ya trae `lang`/`translation_group_id` desde
-S2 (D8). Decisiones nuevas tomadas al planificarla, en D16: proveedor de
-traducción OpenRouter (no la API de Claude directa que preveía
-`docs/I18N.md`, sin dependencia previa elegida), modelo `openrouter/auto`,
-y el routing del prefijo `/en/` (que `docs/I18N.md` le había asignado a S3
-y nunca se implementó ahí) queda absorbido acá. Sin código todavía.
+**S9 — Sitio central y distribución.** Sin código todavía. Home de
+`midominio.com` con últimos posts de todos los espacios, `/espacios` y
+`/t/{tag}`, tags globales asignables desde el admin, RSS por espacio y
+agregado ya bilingüe, sitemaps + índice de sitemaps por espacio e idioma,
+metadatos Open Graph/canonical genéricos de central-vs-subdominio (D16).
