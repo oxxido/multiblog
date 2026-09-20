@@ -11,6 +11,9 @@ services:
       BASE_DOMAIN: localhost
       PORT: "3000"
       DATABASE_URL: postgres://${POSTGRES_USER:-multiblog}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-multiblog}
+      MEDIA_DIR: /data/media
+    volumes:
+      - media_data:/data/media
 
   # Contenedor one-shot: aplica migraciones y siembra espacios/usuario antes
   # de que `app` levante (spec §8). Usa la etapa `migrate` del Dockerfile,
@@ -63,3 +66,4 @@ services:
 volumes:
   caddy_data:
   postgres_data:
+  media_data:

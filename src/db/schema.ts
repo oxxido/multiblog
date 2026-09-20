@@ -23,7 +23,7 @@ export const spaces = pgTable("spaces", {
   accentColor: text("accent_color"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   archivedAt: timestamp("archived_at", { withTimezone: true }),
-  coverMediaId: uuid("cover_media_id").references((): AnyPgColumn => media.id),
+  coverMediaId: uuid("cover_media_id").references((): AnyPgColumn => media.id, { onDelete: "set null" }),
 });
 
 export const media = pgTable("media", {
@@ -60,7 +60,7 @@ export const posts = pgTable(
     publishedAt: timestamp("published_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-    coverMediaId: uuid("cover_media_id").references(() => media.id),
+    coverMediaId: uuid("cover_media_id").references(() => media.id, { onDelete: "set null" }),
   },
   (table) => [
     unique().on(table.spaceId, table.lang, table.slug),
@@ -153,4 +153,12 @@ export const sessions = pgTable("sessions", {
     .notNull()
     .references(() => users.id),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+});
+
+// Fila única (id fijo = 1), sembrada por seed.ts igual que espacios/usuario
+// (docs/slices/07.md §0): la cabecera a sangre del sitio central necesita
+// una foto propia que no pertenece a ningún espacio ni post.
+export const siteSettings = pgTable("site_settings", {
+  id: integer("id").primaryKey().default(1),
+  coverMediaId: uuid("cover_media_id").references((): AnyPgColumn => media.id, { onDelete: "set null" }),
 });

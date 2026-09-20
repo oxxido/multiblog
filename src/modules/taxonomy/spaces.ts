@@ -20,6 +20,7 @@ export interface SpaceDetail {
   description: string | null;
   accentColor: string | null;
   archivedAt: Date | null;
+  coverMediaId: string | null;
 }
 
 export interface SpaceInput {
@@ -28,6 +29,7 @@ export interface SpaceInput {
   name: string;
   description: string | null;
   accentColor: string | null;
+  coverMediaId: string | null;
 }
 
 export async function listSpaces(): Promise<SpaceSummary[]> {
@@ -53,6 +55,7 @@ export async function getSpace(id: string): Promise<SpaceDetail | null> {
       description: spaces.description,
       accentColor: spaces.accentColor,
       archivedAt: spaces.archivedAt,
+      coverMediaId: spaces.coverMediaId,
     })
     .from(spaces)
     .where(eq(spaces.id, id))

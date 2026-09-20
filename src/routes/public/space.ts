@@ -8,6 +8,7 @@ import {
   PAGE_SIZE,
 } from "../../modules/content/posts.js";
 import { listCategoriesForSpace } from "../../modules/taxonomy/categories.js";
+import { resolveCoverImage } from "../../modules/media/media.js";
 import { env } from "../../config/env.js";
 import renderCentralHome from "../central/index.js";
 
@@ -52,10 +53,11 @@ export default function spaceIndexRoutes(fastify: FastifyInstance): void {
     }
 
     const { page } = pageQuerySchema.parse(request.query);
-    const [{ items, hasNext }, total, categories] = await Promise.all([
+    const [{ items, hasNext }, total, categories, cover] = await Promise.all([
       listPublishedPosts(request.space.id, LANG, page),
       countPublishedPosts(request.space.id, LANG),
       listCategoriesForSpace(request.space.id),
+      resolveCoverImage(request.space.coverMediaId),
     ]);
 
     await reply.view("space-index.eta", {
@@ -65,6 +67,7 @@ export default function spaceIndexRoutes(fastify: FastifyInstance): void {
       description: request.space.description,
       accentColor: request.space.accentColor ?? DEFAULT_ACCENT,
       centralUrl: centralUrlFor(request),
+      cover,
       categories: [
         { label: "Todo", href: "/", active: true },
         ...categories.map((category) => ({ label: category.name, href: `/c/${category.slug}`, active: false })),
@@ -91,10 +94,11 @@ export default function spaceIndexRoutes(fastify: FastifyInstance): void {
     }
 
     const { page } = pageQuerySchema.parse(request.query);
-    const [result, total, categories] = await Promise.all([
+    const [result, total, categories, cover] = await Promise.all([
       listPublishedPostsByCategory(request.space.id, LANG, request.params.categoria, page),
       countPublishedPostsByCategory(request.space.id, LANG, request.params.categoria),
       listCategoriesForSpace(request.space.id),
+      resolveCoverImage(request.space.coverMediaId),
     ]);
 
     if (!result || total === null) {
@@ -115,6 +119,7 @@ export default function spaceIndexRoutes(fastify: FastifyInstance): void {
       description: request.space.description,
       accentColor: request.space.accentColor ?? DEFAULT_ACCENT,
       centralUrl: centralUrlFor(request),
+      cover,
       categories: [
         { label: "Todo", href: "/", active: false },
         ...categories.map((category) => ({

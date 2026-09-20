@@ -34,6 +34,7 @@
           Color de acento
           <input type="text" name="accentColor" value="<%= it.space && it.space.accentColor ? it.space.accentColor : "" %>" />
         </label>
+        <%~ include("../../partials/cover-field", { cover: it.cover, value: it.space ? it.space.coverMediaId : null }) %>
         <button type="submit">Guardar</button>
       </form>
 
@@ -43,5 +44,6 @@
       </form>
       <% } %>
     </main>
+    <script type="module" src="/admin/static/coverPicker.js"></script>
   </body>
 </html>

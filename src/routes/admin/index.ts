@@ -4,6 +4,8 @@ import authRoutes from "./auth.js";
 import postRoutes from "./posts.js";
 import spaceRoutes from "./spaces.js";
 import categoryRoutes from "./categories.js";
+import mediaRoutes from "./media.js";
+import siteRoutes from "./site.js";
 
 export default async function adminRoutes(fastify: FastifyInstance): Promise<void> {
   await fastify.register(authRoutes);
@@ -18,5 +20,7 @@ export default async function adminRoutes(fastify: FastifyInstance): Promise<voi
     await protectedScope.register(postRoutes, { prefix: "/posts" });
     await protectedScope.register(spaceRoutes, { prefix: "/espacios" });
     await protectedScope.register(categoryRoutes, { prefix: "/categorias" });
+    await protectedScope.register(mediaRoutes, { prefix: "/media" });
+    await protectedScope.register(siteRoutes, { prefix: "/sitio" });
   });
 }

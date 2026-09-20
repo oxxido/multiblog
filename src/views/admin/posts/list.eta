@@ -11,6 +11,8 @@
       <a href="/admin/posts/new">Nuevo post</a>
       <a href="/admin/espacios">Espacios</a>
       <a href="/admin/categorias">Categorías</a>
+      <a href="/admin/media">Media</a>
+      <a href="/admin/sitio">Sitio</a>
       <form method="post" action="/admin/logout">
         <button type="submit">Salir</button>
       </form>

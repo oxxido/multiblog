@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { findCurrentSlugForRedirect, findPublishedPost } from "../../modules/content/posts.js";
+import { resolveCoverImage } from "../../modules/media/media.js";
 import { env } from "../../config/env.js";
 
 const LANG = "es" as const;
@@ -54,8 +55,10 @@ export default function postRoutes(fastify: FastifyInstance): void {
     }
 
     const subdomain = `${space.subdomain}.${env.BASE_DOMAIN}`;
+    const cover = await resolveCoverImage(post.coverMediaId);
 
     await reply.view("post.eta", {
+      cover,
       title: `${post.title} · ${space.name}`,
       spaceName: space.name,
       subdomain,

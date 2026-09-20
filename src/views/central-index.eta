@@ -5,7 +5,18 @@
   </head>
   <body>
     <div class="central">
-      <div class="central-hero">
+      <div class="central-hero<% if (it.cover) { %> has-cover<% } %>">
+        <% if (it.cover) { %>
+        <img
+          class="central-hero__photo"
+          src="<%= it.cover.src %>"
+          srcset="<%= it.cover.srcset %>"
+          width="<%= it.cover.width %>"
+          height="<%= it.cover.height %>"
+          alt=""
+          loading="lazy"
+        />
+        <% } %>
         <div class="central-hero__nav">
           <div class="central-hero__brand"><%= it.brand %></div>
           <div class="central-hero__links">

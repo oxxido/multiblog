@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Media · Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <header>
+      <h1>Media</h1>
+      <a href="/admin/posts">Posts</a>
+      <a href="/admin/espacios">Espacios</a>
+      <a href="/admin/categorias">Categorías</a>
+    </header>
+    <main>
+      <form method="post" action="/admin/media" enctype="multipart/form-data">
+        <label>
+          Subir imagen (JPEG, PNG o WebP, máximo 15 MB)
+          <input type="file" name="file" accept="image/jpeg,image/png,image/webp" required />
+        </label>
+        <button type="submit">Subir</button>
+      </form>
+
+      <ul>
+        <% it.items.forEach(function(item) { %>
+        <li>
+          <img src="<%= item.thumbnail %>" alt="" width="160" />
+          <div><%= item.filename %></div>
+          <div><%= item.width %>×<%= item.height %> · <%= Math.round(item.size / 1024) %> KB</div>
+          <a href="/admin/media/<%= item.id %>/delete">Borrar</a>
+        </li>
+        <% }) %>
+      </ul>
+    </main>
+  </body>
+</html>

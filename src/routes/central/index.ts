@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { listActiveSpacesWithPostCounts } from "../../modules/taxonomy/spaces.js";
 import { listLatestAcrossSpaces, listTagsAcrossSpaces } from "../../modules/content/central.js";
+import { resolveSiteCoverImage } from "../../modules/media/media.js";
 import { env } from "../../config/env.js";
 
 const LANG = "es" as const;
@@ -24,10 +25,11 @@ function spaceUrlFor(request: FastifyRequest, subdomain: string): string {
 }
 
 export default async function renderCentralHome(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-  const [spacesList, latest, crossTags] = await Promise.all([
+  const [spacesList, latest, crossTags, cover] = await Promise.all([
     listActiveSpacesWithPostCounts(LANG),
     listLatestAcrossSpaces(LANG, LATEST_LIMIT),
     listTagsAcrossSpaces(LANG, TAGS_LIMIT),
+    resolveSiteCoverImage(),
   ]);
 
   const totalPublished = spacesList.reduce((sum, space) => sum + space.publishedCount, 0);
@@ -38,6 +40,7 @@ export default async function renderCentralHome(request: FastifyRequest, reply: 
   await reply.view("central-index.eta", {
     title: env.BASE_DOMAIN,
     brand: env.BASE_DOMAIN,
+    cover,
     activeCount: spacesList.length,
     totalPublished,
     spaceNames,

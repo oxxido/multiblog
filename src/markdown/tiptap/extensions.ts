@@ -5,6 +5,7 @@ import { Table } from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableHeader from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
+import { imageNode } from "./imageNode.js";
 import { blockTiptapNodes } from "../blocks/index.js";
 
 // Único lugar donde se listan los nodos/marcas del editor visual (párrafo,
@@ -22,6 +23,7 @@ export const tiptapExtensions = [
   TableRow,
   TableHeader,
   TableCell,
+  imageNode,
   ...blockTiptapNodes,
 ];
 

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Elegir imagen · Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body data-mode="<%= it.mode %>">
+    <header>
+      <h1><%= it.mode === "multi" ? "Elegir imágenes" : "Elegir una imagen" %></h1>
+      <% if (it.mode === "multi") { %>
+      <button type="button" data-insert-selected>Insertar 0 imágenes</button>
+      <% } %>
+    </header>
+    <main>
+      <ul>
+        <% it.items.forEach(function(item) { %>
+        <li
+          data-media-id="<%= item.id %>"
+          data-path="<%= item.path %>"
+          data-width="<%= item.width %>"
+          data-height="<%= item.height %>"
+          data-filename="<%= item.filename %>"
+        >
+          <% if (it.mode === "multi") { %>
+          <label>
+            <input type="checkbox" />
+            <img src="<%= item.thumbnail %>" alt="" width="160" />
+          </label>
+          <% } else { %>
+          <img src="<%= item.thumbnail %>" alt="" width="160" />
+          <% } %>
+          <div><%= item.filename %></div>
+        </li>
+        <% }) %>
+      </ul>
+    </main>
+    <script type="module" src="/admin/static/picker.js"></script>
+  </body>
+</html>

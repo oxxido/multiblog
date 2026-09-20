@@ -138,6 +138,15 @@ function inlineToMdast(nodes: TiptapNode[]): PhrasingContent[] {
 }
 
 function inlineNodeToMdast(node: TiptapNode): PhrasingContent {
+  if (node.type === "image") {
+    const alt = (node.attrs?.alt as string | undefined) ?? "";
+    return {
+      type: "image",
+      url: (node.attrs?.src as string | undefined) ?? "",
+      alt: alt.length > 0 ? alt : null,
+      title: null,
+    };
+  }
   if (node.type !== "text") {
     throw new Error(`Nodo en línea del editor visual no soportado en Markdown: ${node.type}`);
   }

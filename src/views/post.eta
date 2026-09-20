@@ -9,7 +9,19 @@
       <div>
         <%~ include("partials/space-nav", { spaceName: it.spaceName, centralUrl: it.centralUrl }) %>
 
-        <div class="post-panorama"></div>
+        <div class="post-panorama">
+          <% if (it.cover) { %>
+          <img
+            class="post-panorama__photo"
+            src="<%= it.cover.src %>"
+            srcset="<%= it.cover.srcset %>"
+            width="<%= it.cover.width %>"
+            height="<%= it.cover.height %>"
+            alt=""
+            loading="lazy"
+          />
+          <% } %>
+        </div>
         <div class="post-panorama__rule"></div>
 
         <div class="post-context">

@@ -3,6 +3,7 @@ import { tiptapExtensions } from "../markdown/tiptap/extensions.js";
 import { fromMarkdown } from "../markdown/tiptap/fromMarkdown.js";
 import { toMarkdown } from "../markdown/tiptap/toMarkdown.js";
 import type { TiptapDoc } from "../markdown/tiptap/types.js";
+import { openMediaPicker } from "./mediaPicker.js";
 
 type Mode = "visual" | "raw";
 
@@ -82,25 +83,6 @@ function extractYoutubeId(input: string): string {
   return trimmed;
 }
 
-interface PromptImage {
-  src: string;
-  alt: string;
-}
-
-// Una URL por línea, `alt` opcional separado por `|` (docs/slices/06.md §0):
-// `https://.../a.jpg|Un gato`. Líneas vacías se ignoran.
-function parseGalleryPrompt(input: string): PromptImage[] {
-  return input
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) => {
-      const [src, alt] = line.split("|");
-      return { src: (src ?? "").trim(), alt: (alt ?? "").trim() };
-    })
-    .filter((image) => image.src.length > 0);
-}
-
 // Insertar siempre al final del documento, no en la posición del cursor:
 // `callout` acepta sólo `paragraph+` adentro, así que insertarlo dentro de
 // otro callout (o con el cursor todavía posicionado ahí después de una
@@ -125,16 +107,35 @@ function insertCallout(editor: Editor): void {
   });
 }
 
+// Botón "Imagen" (S7): picker en modo único, un sólo prompt() pide el alt
+// (accesibilidad) — el alt sigue siendo por uso, no por archivo (S6 §0), así
+// que no se guarda en `media`.
+function insertImage(editor: Editor): void {
+  openMediaPicker("single", (images) => {
+    const image = images[0];
+    if (!image) {
+      return;
+    }
+    const alt = window.prompt("Alt de la imagen (accesibilidad):", "") ?? "";
+    insertBlockAtEnd(editor, {
+      type: "paragraph",
+      content: [{ type: "image", attrs: { src: `/media/${image.path}`, alt } }],
+    });
+  });
+}
+
+// Botón "Galería" (S7): ya no pide URLs por prompt(), abre el picker en
+// modo múltiple. Las imágenes elegidas entran con alt: "" — decorativas por
+// defecto, el autor edita el alt a mano en crudo si quiere pie de foto
+// (S6 §0: alt vacío = sin figcaption).
 function insertGallery(editor: Editor): void {
-  const raw = window.prompt("Una URL de imagen por línea (alt opcional después de '|'):", "");
-  if (!raw) {
-    return;
-  }
-  const images = parseGalleryPrompt(raw);
-  if (images.length === 0) {
-    return;
-  }
-  insertBlockAtEnd(editor, { type: "gallery", attrs: { images, cols: 2 } });
+  openMediaPicker("multi", (images) => {
+    if (images.length === 0) {
+      return;
+    }
+    const galleryImages = images.map((image) => ({ src: `/media/${image.path}`, alt: "" }));
+    insertBlockAtEnd(editor, { type: "gallery", attrs: { images: galleryImages, cols: 2 } });
+  });
 }
 
 function insertYoutube(editor: Editor): void {
@@ -148,6 +149,7 @@ function insertYoutube(editor: Editor): void {
 
 function mountToolbar(editor: Editor, buttons: HTMLButtonElement[]): void {
   const inserters: Record<string, (editor: Editor) => void> = {
+    image: insertImage,
     callout: insertCallout,
     gallery: insertGallery,
     youtube: insertYoutube,

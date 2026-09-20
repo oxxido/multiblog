@@ -34,8 +34,10 @@
           Extracto
           <input type="text" name="excerpt" value="<%= it.post.excerpt ? it.post.excerpt : "" %>" />
         </label>
+        <%~ include("../../partials/cover-field", { cover: it.cover, value: it.post.coverMediaId }) %>
         <div>
           <button type="button" data-editor-toggle>Ver Markdown</button>
+          <button type="button" data-insert-block="image">Imagen</button>
           <button type="button" data-insert-block="callout">Callout</button>
           <button type="button" data-insert-block="gallery">Galería</button>
           <button type="button" data-insert-block="youtube">YouTube</button>
@@ -70,5 +72,6 @@
       </form>
     </main>
     <script type="module" src="/admin/static/editor.js"></script>
+    <script type="module" src="/admin/static/coverPicker.js"></script>
   </body>
 </html>

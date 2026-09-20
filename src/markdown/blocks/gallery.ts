@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { Node } from "@tiptap/core";
-import type { Element } from "hast";
+import type { Element, Properties } from "hast";
 import type { BlockDefinition, DirectiveNode } from "./types.js";
+import { buildResponsiveImage, parseMediaUrl } from "../../modules/media/derivatives.js";
 
 const galleryAttrsSchema = z.object({
   cols: z.coerce.number().min(1).max(4).default(2),
@@ -12,6 +13,10 @@ type GalleryAttrs = z.infer<typeof galleryAttrsSchema>;
 interface GalleryImage {
   src: string;
   alt: string;
+  // Presente sólo cuando la imagen es de la biblioteca y el plugin remark
+  // de T6 (mediaImages.ts) ya la resolvió contra `media`: una URL externa
+  // nunca lo tiene (docs/slices/07.md §0).
+  mediaImage?: { width: number; height: number };
 }
 
 // Un cuarto marco de registro por imagen (invariante de Design.md §4: los
@@ -26,12 +31,32 @@ function corners(): Element[] {
   }));
 }
 
+// Con dimensiones reales (imagen de biblioteca, T6 ya la resolvió) arma
+// srcset/width/height/loading con el mismo helper puro que usa el plugin de
+// imágenes del cuerpo, no una copia de la lógica (docs/slices/07.md §0). Una
+// imagen externa sigue sin srcset, como hasta ahora.
+function imageProperties(image: GalleryImage): Properties {
+  const id = image.mediaImage ? parseMediaUrl(image.src) : null;
+  if (!image.mediaImage || !id) {
+    return { src: image.src, alt: image.alt };
+  }
+  const responsive = buildResponsiveImage({ id, ...image.mediaImage });
+  return {
+    src: responsive.src,
+    srcset: responsive.srcset,
+    width: responsive.width,
+    height: responsive.height,
+    loading: "lazy",
+    alt: image.alt,
+  };
+}
+
 // El pie de cada imagen es su propio `alt` (docs/DECISIONS.md, S6 §0): un
 // `alt` vacío es una imagen decorativa, sin `<figcaption>`.
 function frame(image: GalleryImage): Element {
   const children: Element["children"] = [
     ...corners(),
-    { type: "element", tagName: "img", properties: { src: image.src, alt: image.alt }, children: [] },
+    { type: "element", tagName: "img", properties: imageProperties(image), children: [] },
   ];
   if (image.alt.length > 0) {
     children.push({
@@ -61,7 +86,8 @@ function extractImages(node: DirectiveNode): GalleryImage[] {
     }
     for (const inline of child.children) {
       if (inline.type === "image") {
-        images.push({ src: inline.url, alt: inline.alt ?? "" });
+        const mediaImage = inline.data?.mediaImage;
+        images.push({ src: inline.url, alt: inline.alt ?? "", ...(mediaImage ? { mediaImage } : {}) });
       }
     }
   }
