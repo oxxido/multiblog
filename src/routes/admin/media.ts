@@ -29,9 +29,18 @@ export default async function mediaRoutes(fastify: FastifyInstance): Promise<voi
       return reply.code(400).send("Falta el archivo");
     }
 
-    const buffer = await file.toBuffer();
-    if (file.file.truncated) {
-      return reply.code(400).send("El archivo supera el tamaño máximo (15 MB)");
+    let buffer: Buffer;
+    try {
+      buffer = await file.toBuffer();
+    } catch (error) {
+      // @fastify/multipart corta el stream y rechaza con FST_REQ_FILE_TOO_LARGE
+      // en vez de resolver con un buffer truncado, ya que se registró con el
+      // mismo límite que valida uploadMedia (defensa en profundidad: acá se
+      // aplica ni bien el archivo entra, sin bufferearlo entero primero).
+      if ((error as { code?: string }).code === "FST_REQ_FILE_TOO_LARGE") {
+        return reply.code(400).send("El archivo supera el tamaño máximo (15 MB)");
+      }
+      throw error;
     }
 
     try {
