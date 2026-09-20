@@ -9,6 +9,7 @@ RUN pnpm install --frozen-lockfile
 FROM deps AS build
 COPY tsconfig.json ./
 COPY src ./src
+COPY public ./public
 RUN pnpm build
 
 # Migraciones y seed necesitan drizzle-kit y tsx (devDependencies): usan
@@ -26,6 +27,7 @@ FROM base AS runtime
 ENV NODE_ENV=production
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/public ./public
 COPY src/views ./src/views
 COPY content ./content
 COPY package.json ./

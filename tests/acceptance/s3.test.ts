@@ -92,6 +92,17 @@ async function createPublishedPost(
   const createResponse = await app.inject({
     method: "POST",
     url: "/admin/posts",
+    ...form({ spaceId, slug, title, excerpt: "" }, cookie),
+  });
+  assert.equal(createResponse.statusCode, 302, createResponse.body);
+  const id = createResponse.headers.location?.toString().split("/").pop();
+  assert.ok(id);
+
+  // Paso mínimo de creación (S5): el cuerpo y las categorías se escriben en
+  // la pantalla de edición completa, no en el alta.
+  const editResponse = await app.inject({
+    method: "POST",
+    url: `/admin/posts/${id}`,
     ...form(
       {
         spaceId,
@@ -104,9 +115,7 @@ async function createPublishedPost(
       cookie,
     ),
   });
-  assert.equal(createResponse.statusCode, 302, createResponse.body);
-  const id = createResponse.headers.location?.toString().split("/").pop();
-  assert.ok(id);
+  assert.equal(editResponse.statusCode, 302, editResponse.body);
 
   const publishResponse = await app.inject({
     method: "POST",
