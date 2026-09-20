@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import {
   findCurrentSlugForRedirect,
   findPublishedPost,
@@ -8,24 +8,9 @@ import { resolveCoverImage } from "../../modules/media/media.js";
 import { env } from "../../config/env.js";
 import { stringsFor } from "../../i18n/dictionary.js";
 import { formatDateLong } from "../../i18n/dates.js";
+import { absoluteMediaUrl, centralUrlFor, postAbsoluteUrlFor } from "./urls.js";
 
 const DEFAULT_ACCENT = "#5980a6";
-
-function centralUrlFor(request: FastifyRequest, lang: "es" | "en"): string {
-  const host = request.headers.host ?? "";
-  const port = host.split(":")[1];
-  const suffix = lang === "en" ? "/en" : "";
-  return `${request.protocol}://${env.BASE_DOMAIN}${port ? `:${port}` : ""}${suffix}`;
-}
-
-// Un post y su hermano de traducción viven siempre en el mismo espacio
-// (docs/I18N.md §1): alcanza con cambiar el prefijo /en, nunca el subdominio.
-function postAbsoluteUrlFor(request: FastifyRequest, subdomain: string, postLang: "es" | "en", slug: string): string {
-  const host = request.headers.host ?? "";
-  const port = host.split(":")[1];
-  const suffix = postLang === "en" ? "/en" : "";
-  return `${request.protocol}://${subdomain}${port ? `:${port}` : ""}${suffix}/${slug}`;
-}
 
 export default function postRoutes(lang: "es" | "en") {
   const prefix = lang === "en" ? "/en" : "";
@@ -92,6 +77,10 @@ export default function postRoutes(lang: "es" | "en") {
         tags: post.tags,
         prev: post.prev,
         next: post.next,
+        ogType: "article",
+        ogTitle: post.title,
+        ogDescription: post.excerpt,
+        ogImage: cover ? absoluteMediaUrl(request, cover.src) : null,
       });
     });
   };

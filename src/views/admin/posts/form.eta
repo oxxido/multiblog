@@ -71,6 +71,10 @@
           </label>
           <% }) %>
         </fieldset>
+        <label>
+          Tags (separados por coma)
+          <input type="text" name="tags" value="<%= it.post.tagNames.join(", ") %>" />
+        </label>
         <button type="submit">Guardar</button>
       </form>
 

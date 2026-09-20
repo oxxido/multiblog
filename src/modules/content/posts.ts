@@ -3,6 +3,7 @@ import { and, asc, count, desc, eq, gt, inArray, lt, ne } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { categories, postCategories, posts, postSlugs, postTags, spaces, tags } from "../../db/schema.js";
 import { renderMarkdown } from "../../markdown/pipeline.js";
+import { syncPostTags, tagNamesForPost } from "../taxonomy/tags.js";
 
 const LIST_LIMIT = 200;
 export const PAGE_SIZE = 10;
@@ -30,6 +31,7 @@ export interface PostDetail {
   bodyMd: string;
   status: "draft" | "scheduled" | "published";
   categoryIds: string[];
+  tagNames: string[];
   coverMediaId: string | null;
   lang: "es" | "en";
   translationGroupId: string;
@@ -45,6 +47,7 @@ export interface PostInput {
   excerpt: string | null;
   bodyMd: string;
   categoryIds: string[];
+  tagNames: string[];
   coverMediaId: string | null;
 }
 
@@ -129,12 +132,16 @@ export async function getPost(id: string): Promise<PostDetail | null> {
     return null;
   }
 
-  const categoryRows = await db
-    .select({ categoryId: postCategories.categoryId })
-    .from(postCategories)
-    .where(eq(postCategories.postId, id));
+  const [categoryRows, tagNames] = await Promise.all([
+    db.select({ categoryId: postCategories.categoryId }).from(postCategories).where(eq(postCategories.postId, id)),
+    tagNamesForPost(id),
+  ]);
 
-  return { ...row, categoryIds: categoryRows.map((categoryRow) => categoryRow.categoryId) };
+  return {
+    ...row,
+    categoryIds: categoryRows.map((categoryRow) => categoryRow.categoryId),
+    tagNames,
+  };
 }
 
 export async function createPost(input: PostInput): Promise<{ id: string }> {
@@ -158,6 +165,7 @@ export async function createPost(input: PostInput): Promise<{ id: string }> {
   }
 
   await syncPostCategories(row.id, input.spaceId, input.categoryIds);
+  await syncPostTags(row.id, input.tagNames);
 
   return row;
 }
@@ -199,6 +207,7 @@ export async function updatePost(id: string, input: PostInput): Promise<void> {
     .where(eq(posts.id, id));
 
   await syncPostCategories(id, input.spaceId, input.categoryIds);
+  await syncPostTags(id, input.tagNames);
 }
 
 // Mismo alcance que ya tenía el botón "Guardar" de S2/S3 sobre el cuerpo
@@ -599,4 +608,54 @@ export async function findCurrentSlugForRedirect(
     .limit(1);
 
   return row?.currentSlug ?? null;
+}
+
+export interface FeedPostItem {
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  bodyHtml: string;
+  publishedAt: Date;
+}
+
+// Sin paginar (docs/slices/09.md T5): un límite fijo, mismo criterio que el
+// resto de los listados de este módulo.
+const FEED_POST_LIMIT = 50;
+
+export async function listPublishedPostsForFeed(spaceId: string, lang: "es" | "en"): Promise<FeedPostItem[]> {
+  const rows = await db
+    .select({
+      slug: posts.slug,
+      title: posts.title,
+      excerpt: posts.excerpt,
+      bodyHtml: posts.bodyHtml,
+      publishedAt: posts.publishedAt,
+    })
+    .from(posts)
+    .where(and(eq(posts.spaceId, spaceId), eq(posts.lang, lang), eq(posts.status, "published")))
+    .orderBy(desc(posts.publishedAt), asc(posts.id))
+    .limit(FEED_POST_LIMIT);
+
+  return rows.map((row) => {
+    if (!row.publishedAt) {
+      throw new Error(`Post publicado sin published_at: ${row.slug}`);
+    }
+    return { ...row, publishedAt: row.publishedAt };
+  });
+}
+
+export interface SitemapPostRef {
+  slug: string;
+  updatedAt: Date;
+}
+
+const SITEMAP_POST_LIMIT = 1000;
+
+export async function listPublishedSlugsForSitemap(spaceId: string, lang: "es" | "en"): Promise<SitemapPostRef[]> {
+  return db
+    .select({ slug: posts.slug, updatedAt: posts.updatedAt })
+    .from(posts)
+    .where(and(eq(posts.spaceId, spaceId), eq(posts.lang, lang), eq(posts.status, "published")))
+    .orderBy(desc(posts.publishedAt), asc(posts.id))
+    .limit(SITEMAP_POST_LIMIT);
 }

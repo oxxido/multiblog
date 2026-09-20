@@ -1,32 +1,30 @@
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
   countPublishedPosts,
   countPublishedPostsByCategory,
   listPublishedPosts,
   listPublishedPostsByCategory,
+  listPublishedPostsForFeed,
+  listPublishedSlugsForSitemap,
   PAGE_SIZE,
 } from "../../modules/content/posts.js";
+import { listLatestAcrossSpacesForFeed } from "../../modules/content/central.js";
 import { listCategoriesForSpace } from "../../modules/taxonomy/categories.js";
+import { listActiveSpacesWithPostCounts } from "../../modules/taxonomy/spaces.js";
 import { resolveCoverImage } from "../../modules/media/media.js";
 import { env } from "../../config/env.js";
-import renderCentralHome from "../central/index.js";
+import { renderCentralHome, renderSpacesPage, renderTagPage } from "../central/index.js";
 import { stringsFor } from "../../i18n/dictionary.js";
 import { formatDateLong } from "../../i18n/dates.js";
+import { buildRssXml, type RssChannel } from "../../modules/feed/rss.js";
+import { buildSitemapIndexXml, buildUrlsetXml, type SitemapUrl } from "../../modules/feed/sitemap.js";
+import { absoluteMediaUrl, centralUrlFor, spaceUrlFor } from "./urls.js";
 
 const DEFAULT_ACCENT = "#5980a6";
 
-// Mismo esquema y puerto de la petición entrante para no asumir un dominio
-// fijo (.claude/rules/Db.md) — construye la home central a partir de
-// BASE_DOMAIN en vez de una URL escrita a mano.
-function centralUrlFor(request: FastifyRequest, lang: "es" | "en"): string {
-  const host = request.headers.host ?? "";
-  const port = host.split(":")[1];
-  const suffix = lang === "en" ? "/en" : "";
-  return `${request.protocol}://${env.BASE_DOMAIN}${port ? `:${port}` : ""}${suffix}`;
-}
-
 const pageQuerySchema = z.object({ page: z.coerce.number().int().min(1).default(1) });
+const tagParamsSchema = z.object({ tagSlug: z.string().min(1) });
 
 export default function spaceIndexRoutes(lang: "es" | "en") {
   const prefix = lang === "en" ? "/en" : "";
@@ -39,20 +37,23 @@ export default function spaceIndexRoutes(lang: "es" | "en") {
         return;
       }
 
+      const space = request.space;
       const { page } = pageQuerySchema.parse(request.query);
       const [{ items, hasNext }, total, categories, cover] = await Promise.all([
-        listPublishedPosts(request.space.id, lang, page),
-        countPublishedPosts(request.space.id, lang),
-        listCategoriesForSpace(request.space.id),
-        resolveCoverImage(request.space.coverMediaId),
+        listPublishedPosts(space.id, lang, page),
+        countPublishedPosts(space.id, lang),
+        listCategoriesForSpace(space.id),
+        resolveCoverImage(space.coverMediaId),
       ]);
 
+      const canonical = `${spaceUrlFor(request, space.subdomain, lang)}/`;
+
       await reply.view("space-index.eta", {
-        heading: request.space.name,
-        spaceName: request.space.name,
-        subdomain: `${request.space.subdomain}.${env.BASE_DOMAIN}`,
-        description: request.space.description,
-        accentColor: request.space.accentColor ?? DEFAULT_ACCENT,
+        heading: space.name,
+        spaceName: space.name,
+        subdomain: `${space.subdomain}.${env.BASE_DOMAIN}`,
+        description: space.description,
+        accentColor: space.accentColor ?? DEFAULT_ACCENT,
         centralUrl: centralUrlFor(request, lang),
         htmlLang: strings.htmlLang,
         strings,
@@ -78,6 +79,11 @@ export default function spaceIndexRoutes(lang: "es" | "en") {
         totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
         hasNext,
         basePath: `${prefix}/`,
+        canonical,
+        ogType: "website",
+        ogTitle: space.name,
+        ogDescription: space.description,
+        ogImage: cover ? absoluteMediaUrl(request, cover.src) : null,
       });
     });
 
@@ -87,12 +93,13 @@ export default function spaceIndexRoutes(lang: "es" | "en") {
         return;
       }
 
+      const space = request.space;
       const { page } = pageQuerySchema.parse(request.query);
       const [result, total, categories, cover] = await Promise.all([
-        listPublishedPostsByCategory(request.space.id, lang, request.params.categoria, page),
-        countPublishedPostsByCategory(request.space.id, lang, request.params.categoria),
-        listCategoriesForSpace(request.space.id),
-        resolveCoverImage(request.space.coverMediaId),
+        listPublishedPostsByCategory(space.id, lang, request.params.categoria, page),
+        countPublishedPostsByCategory(space.id, lang, request.params.categoria),
+        listCategoriesForSpace(space.id),
+        resolveCoverImage(space.coverMediaId),
       ]);
 
       if (!result || total === null) {
@@ -106,12 +113,14 @@ export default function spaceIndexRoutes(lang: "es" | "en") {
         return;
       }
 
+      const canonical = `${spaceUrlFor(request, space.subdomain, lang)}/c/${request.params.categoria}`;
+
       await reply.view("space-index.eta", {
         heading: activeCategory.name,
-        spaceName: request.space.name,
-        subdomain: `${request.space.subdomain}.${env.BASE_DOMAIN}`,
-        description: request.space.description,
-        accentColor: request.space.accentColor ?? DEFAULT_ACCENT,
+        spaceName: space.name,
+        subdomain: `${space.subdomain}.${env.BASE_DOMAIN}`,
+        description: space.description,
+        accentColor: space.accentColor ?? DEFAULT_ACCENT,
         centralUrl: centralUrlFor(request, lang),
         htmlLang: strings.htmlLang,
         strings,
@@ -137,7 +146,103 @@ export default function spaceIndexRoutes(lang: "es" | "en") {
         totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
         hasNext: result.hasNext,
         basePath: `${prefix}/c/${request.params.categoria}`,
+        canonical,
+        ogType: "website",
+        ogTitle: activeCategory.name,
+        ogDescription: space.description,
+        ogImage: cover ? absoluteMediaUrl(request, cover.src) : null,
       });
+    });
+
+    // Central-only (mismo patrón de guarda que GET / con request.space === null):
+    // no hay página "/espacios" ni "/t/{tag}" dentro de un espacio.
+    fastify.get("/espacios", async (request, reply) => {
+      if (request.space) {
+        await reply.code(404).send();
+        return;
+      }
+      await renderSpacesPage(request, reply, lang);
+    });
+
+    fastify.get<{ Params: { tagSlug: string } }>("/t/:tagSlug", async (request, reply) => {
+      if (request.space) {
+        await reply.code(404).send();
+        return;
+      }
+      const { tagSlug } = tagParamsSchema.parse(request.params);
+      const found = await renderTagPage(request, reply, lang, tagSlug);
+      if (!found) {
+        await reply.code(404).send();
+      }
+    });
+
+    fastify.get("/feed.xml", async (request, reply) => {
+      const space = request.space;
+      const channel: RssChannel = space
+        ? {
+            title: space.name,
+            link: `${spaceUrlFor(request, space.subdomain, lang)}/`,
+            description: space.description ?? space.name,
+            language: strings.htmlLang,
+            items: (await listPublishedPostsForFeed(space.id, lang)).map((item) => {
+              const link = `${spaceUrlFor(request, space.subdomain, lang)}/${item.slug}`;
+              return {
+                title: item.title,
+                link,
+                guid: link,
+                pubDate: item.publishedAt,
+                description: item.excerpt ?? item.title,
+                contentEncoded: item.bodyHtml,
+              };
+            }),
+          }
+        : {
+            title: env.BASE_DOMAIN,
+            link: centralUrlFor(request, lang),
+            description: env.BASE_DOMAIN,
+            language: strings.htmlLang,
+            items: (await listLatestAcrossSpacesForFeed(lang)).map((item) => {
+              const link = `${spaceUrlFor(request, item.spaceSubdomain, lang)}/${item.slug}`;
+              return {
+                title: item.title,
+                link,
+                guid: link,
+                pubDate: item.publishedAt,
+                description: item.excerpt ?? item.title,
+                contentEncoded: item.bodyHtml,
+              };
+            }),
+          };
+
+      reply.header("content-type", "application/rss+xml; charset=utf-8");
+      return reply.send(buildRssXml(channel));
+    });
+
+    fastify.get("/sitemap.xml", async (request, reply) => {
+      reply.header("content-type", "application/xml; charset=utf-8");
+
+      if (!request.space) {
+        const spacesList = await listActiveSpacesWithPostCounts(lang);
+        const sitemaps = spacesList.map((space) => ({
+          loc: `${spaceUrlFor(request, space.subdomain, lang)}/sitemap.xml`,
+        }));
+        return reply.send(buildSitemapIndexXml(sitemaps));
+      }
+
+      const space = request.space;
+      const baseUrl = spaceUrlFor(request, space.subdomain, lang);
+      const [categoriesList, postSlugs] = await Promise.all([
+        listCategoriesForSpace(space.id),
+        listPublishedSlugsForSitemap(space.id, lang),
+      ]);
+
+      const urls: SitemapUrl[] = [
+        { loc: `${baseUrl}/` },
+        ...categoriesList.map((category) => ({ loc: `${baseUrl}/c/${category.slug}` })),
+        ...postSlugs.map((post) => ({ loc: `${baseUrl}/${post.slug}`, lastmod: post.updatedAt })),
+      ];
+
+      return reply.send(buildUrlsetXml(urls));
     });
   };
 }

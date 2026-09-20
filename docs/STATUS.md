@@ -366,10 +366,83 @@ habitual, la variable `OPENROUTER_API_KEY` en el entorno de producción
 para que el botón de traducción funcione (es opcional en `env.ts`, así que
 el resto del sitio sigue andando sin ella).
 
+## Slice hecha (código), pendiente de redeploy
+
+**S9 — Sitio central y distribución.** Implementada según
+`docs/slices/09.md` (T1–T9) en la rama `s9-central-distribucion`, validada
+contra el Postgres de dev. `pnpm lint && pnpm typecheck && pnpm test` en
+verde (106 tests, 23 nuevos: 6 unit en `tests/unit/taxonomy/tags.test.ts`, 5
+en `tests/unit/feed/rss.test.ts`, 4 en `tests/unit/feed/sitemap.test.ts` y 10
+de aceptación en `tests/acceptance/s9.test.ts` — un tag asignado por texto
+libre desde `/admin/posts/{id}` agrupa en `/t/{tag}` posts de espacios
+distintos, `/espacios` lista los espacios activos con su conteo, `/espacios`
+y `/t/{tag}` dentro de un espacio dan 404, un tag inexistente da 404 y uno
+sin posts en un idioma da lista vacía, `/feed.xml` de un espacio y el
+agregado central llevan sólo posts publicados con extracto y cuerpo
+completo, `/sitemap.xml` de un espacio lista posts publicados y categorías
+sin borradores, `/sitemap.xml` central es un índice que apunta al de cada
+espacio activo en su mismo idioma, el canonical de un post apunta a su
+subdominio y post/espacio/central llevan Open Graph con imagen cuando hay
+portada).
+
+`src/modules/taxonomy/tags.ts` (nuevo) trae `slugifyTagName`/`parseTagNames`
+(puras) y `syncPostTags`/`tagNamesForPost` (find-or-create secuencial contra
+`tags`, mismo patrón `delete`+`insert` que `syncPostCategories`).
+`/admin/posts/{id}` gana un único campo de texto para tags, sin pantalla de
+gestión propia (decisión de `docs/slices/09.md` §0). `src/routes/public/urls.ts`
+(nuevo) consolida `centralUrlFor`/`spaceUrlFor`/`postAbsoluteUrlFor` —
+duplicados hasta ahora en `space.ts`, `post.ts` y `central/index.ts` — y
+suma `absoluteMediaUrl` para `og:image`. `src/modules/feed/rss.ts` y
+`src/modules/feed/sitemap.ts` (nuevos) arman el XML a mano (sin dependencia
+nueva): `buildRssXml` con `content:encoded` en `CDATA`, `buildUrlsetXml`/
+`buildSitemapIndexXml` sin mezclar `<url>` y `<sitemap>` en el mismo
+archivo. `central/index.ts` pasó de un único export por default a tres
+exports con nombre (`renderCentralHome`, `renderSpacesPage`,
+`renderTagPage`), consumidos por las rutas nuevas `GET {prefix}/espacios` y
+`GET {prefix}/t/:tagSlug` de `routes/public/space.ts` (404 si el request
+trae espacio, mismo patrón de guarda que `GET /`). Plantillas nuevas
+`central-spaces.eta`/`central-tag.eta` y partials `space-grid.eta`/
+`latest-list.eta` (extraídos de `central-index.eta`, que ahora los reusa).
+`partials/head.eta` gana el bloque de Open Graph, consumido por `post.eta`,
+`space-index.eta` y las tres vistas del central.
+
+Ajustes que no estaban en el desglose original y aparecieron al implementar:
+
+- **Los tags del post publicado enlazan a `/t/{tag}`** (`post.eta`), no
+  sólo los del central: la propia descripción de la tarea de tests de
+  `docs/slices/09.md` T9 lo da por sentado ("el post publicado los muestra
+  enlazados"). Como `/t/{tag}` sólo resuelve en el dominio central (404 si
+  `request.space` no es null), el enlace usa `it.centralUrl` en vez de una
+  ruta relativa — un enlace relativo al prefijo habría apuntado a la misma
+  ruta registrada en el subdominio, que siempre da 404.
+- **`listPublishedPostsForFeed`/`listPublishedSlugsForSitemap`/
+  `listLatestAcrossSpacesForFeed` no reciben `limit` por parámetro**, a
+  diferencia de la firma que proponía el desglose: usan una constante
+  interna (`FEED_POST_LIMIT`/`SITEMAP_POST_LIMIT`/`FEED_LATEST_LIMIT`),
+  mismo patrón que `LIST_LIMIT`/`PAGE_SIZE` ya establecido en estos módulos.
+- **El sitemapindex central reusa `listActiveSpacesWithPostCounts(lang)`**,
+  no `listActiveSpaceOptions` como sugería el desglose: esa función sólo
+  devuelve `id`/`name`, sin `subdomain`, y arma la URL de cada sitemap de
+  espacio requiere el subdominio.
+- **Limpieza de la base de dev antes de correr la aceptación:** `pnpm test`
+  acumulado de S3/S4 (y ahora S9) había dejado 635 espacios de prueba
+  (`slug LIKE 'espacio-s%'`) en el Postgres de dev — suficientes para que
+  `listActiveSpacesWithPostCounts` (con `LIMIT` de 200, `.claude/rules/Db.md`)
+  dejara afuera el espacio recién creado por el test del sitemapindex
+  central. Se borraron esos espacios de prueba (cascada manual a
+  `post_slugs`/`posts`/`categories`, sin `onDelete: cascade` declarado
+  para `spaces`) con confirmación del usuario; `nutricion`/`ideas` quedaron
+  intactos. No es un problema de esta slice, pero cualquier slice futura
+  que liste "todos los espacios activos" lo va a volver a pisar si los
+  tests de aceptación siguen sin limpiar los espacios que crean.
+
+**No se tocó el stack de producción de esta máquina** (mismo motivo que
+S3–S8: el puerto 3000 ya lo sirve `multiblog-prod-app-1`). Redeploy
+pendiente de que el usuario lo pida.
+
 ## Próxima
 
-**S9 — Sitio central y distribución.** Sin código todavía. Home de
-`midominio.com` con últimos posts de todos los espacios, `/espacios` y
-`/t/{tag}`, tags globales asignables desde el admin, RSS por espacio y
-agregado ya bilingüe, sitemaps + índice de sitemaps por espacio e idioma,
-metadatos Open Graph/canonical genéricos de central-vs-subdominio (D16).
+**S10 — Flujo de escritura.** Sin código todavía. Borradores con vista
+previa en el subdominio real por URL secreta, publicación programada,
+histórico de `body_md` con diff, importador en lote de `.md` desde un
+directorio, exportador completo a `.md` con front-matter.

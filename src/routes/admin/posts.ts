@@ -12,6 +12,7 @@ import {
 } from "../../modules/content/posts.js";
 import { listActiveSpaceOptions, listSpaceOptionsForPost } from "../../modules/taxonomy/spaces.js";
 import { listCategories } from "../../modules/taxonomy/categories.js";
+import { parseTagNames } from "../../modules/taxonomy/tags.js";
 import { fromMarkdown } from "../../markdown/tiptap/fromMarkdown.js";
 import { resolveCoverImage } from "../../modules/media/media.js";
 import { translatePost } from "../../modules/translation/translate.js";
@@ -55,6 +56,7 @@ const editPostFormSchema = z.object({
   excerpt: excerptField,
   bodyMd: z.string().min(1),
   categoryIds: categoryIdsField,
+  tags: z.string().default("").transform(parseTagNames),
   coverMediaId: coverMediaIdField,
 });
 
@@ -81,7 +83,7 @@ export default function postRoutes(fastify: FastifyInstance): void {
       return reply.code(400).send(parsed.error.message);
     }
 
-    const { id } = await createPost({ ...parsed.data, bodyMd: "", categoryIds: [], coverMediaId: null });
+    const { id } = await createPost({ ...parsed.data, bodyMd: "", categoryIds: [], tagNames: [], coverMediaId: null });
     return reply.redirect(`/admin/posts/${id}`);
   });
 
@@ -124,7 +126,8 @@ export default function postRoutes(fastify: FastifyInstance): void {
       return reply.code(400).send(parsed.error.message);
     }
 
-    await updatePost(id, parsed.data);
+    const { tags: tagNames, ...rest } = parsed.data;
+    await updatePost(id, { ...rest, tagNames });
     return reply.redirect(`/admin/posts/${id}`);
   });
 
