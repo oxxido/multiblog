@@ -9,8 +9,18 @@
     <header>
       <a href="/admin/posts">← Posts</a>
       <span>Estado: <%= it.post.status %></span>
+      <span>Idioma: <%= it.post.lang %></span>
     </header>
     <main>
+      <% if (it.translateError) { %>
+      <p><%= it.translateError %></p>
+      <% } %> <% if (it.sibling) { %>
+      <p>
+        Hermano (<%= it.sibling.lang %>, <%= it.sibling.status %>):
+        <a href="/admin/posts/<%= it.sibling.id %>">ver</a>
+        <% if (it.siblingIsStale) { %> — traducción desactualizada, el original cambió después de traducirse <% } %>
+      </p>
+      <% } %>
       <form method="post" action="<%= it.action %>" data-post-id="<%= it.post.id %>">
         <label>
           Espacio
@@ -67,6 +77,11 @@
       <form method="post" action="/admin/posts/<%= it.post.id %>/publish">
         <button type="submit">Publicar</button>
       </form>
+      <% if (it.post.lang === "es" && it.post.status === "published") { %>
+      <form method="post" action="/admin/posts/<%= it.post.id %>/translate">
+        <button type="submit">Traducir al inglés</button>
+      </form>
+      <% } %>
       <form method="post" action="/admin/posts/<%= it.post.id %>/delete">
         <button type="submit">Borrar</button>
       </form>

@@ -1,7 +1,7 @@
 <div class="space-nav">
   <div class="space-nav__name"><%= it.spaceName %></div>
   <div class="space-nav__links">
-    <a href="/#categorias">Categorías</a>
-    <a href="<%= it.centralUrl %>">← todo</a>
+    <a href="<%= it.prefix %>/#categorias"><%= it.strings.categoriesLink %></a>
+    <a href="<%= it.centralUrl %>"><%= it.strings.backToAll %></a>
   </div>
 </div>

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="<%= it.htmlLang %>">
   <head>
     <%~ include("partials/head", { title: it.title }) %>
   </head>
@@ -20,26 +20,26 @@
         <div class="central-hero__nav">
           <div class="central-hero__brand"><%= it.brand %></div>
           <div class="central-hero__links">
-            <a href="#espacios">Espacios</a>
-            <a href="#tags">Tags</a>
-            <span>RSS</span>
+            <a href="#espacios"><%= it.strings.spacesNavLabel %></a>
+            <a href="#tags"><%= it.strings.tagsNavLabel %></a>
+            <span><%= it.strings.rssNavLabel %></span>
           </div>
         </div>
         <div>
-          <h1>Un solo sitio,<br />varios espacios.</h1>
+          <h1><%~ it.strings.centralHeadline %></h1>
           <% if (it.spaceNames) { %>
-          <p class="central-hero__lead">
-            <%= it.spaceNames %>. Cada uno vive en su propio subdominio y escribe a su ritmo; acá se ven todos
-            juntos.
-          </p>
+          <p class="central-hero__lead"><%= it.spaceNames %>. <%= it.strings.centralLeadSuffix %></p>
           <% } %>
         </div>
       </div>
 
       <div class="central-section" id="espacios">
         <div class="central-section__header">
-          <div class="central-section__title">Espacios</div>
-          <div class="central-section__count"><%= it.activeCount %> activos · <%= it.totalPublished %> publicados</div>
+          <div class="central-section__title"><%= it.strings.spacesNavLabel %></div>
+          <div class="central-section__count">
+            <%= it.activeCount %> <%= it.strings.activeCountLabel %> · <%= it.totalPublished %>
+            <%= it.strings.publishedCountLabel %>
+          </div>
         </div>
         <div class="space-grid">
           <% it.spaces.forEach(function(space) { %>
@@ -62,7 +62,7 @@
       </div>
 
       <div class="central-section">
-        <div class="central-section__title" style="margin-bottom: 8px;">Último</div>
+        <div class="central-section__title" style="margin-bottom: 8px;"><%= it.strings.latestSectionTitle %></div>
         <div class="latest-list">
           <% it.latest.forEach(function(item) { %>
           <a href="<%= item.url %>" class="latest-item">
@@ -81,7 +81,7 @@
 
       <div class="central-section" id="tags">
         <div class="tag-row">
-          <div class="tag-row__title">Tags que cruzan</div>
+          <div class="tag-row__title"><%= it.strings.crossTagsSectionTitle %></div>
           <div class="tag-row__tags">
             <% it.tags.forEach(function(tag) { %>
             <span class="tag tag-outline"><%= tag.name %> · <%= tag.count %></span>
@@ -92,7 +92,7 @@
 
       <div class="central-footer">
         <span><%= it.brand %></span>
-        <span>RSS agregado · Archivo</span>
+        <span><%= it.strings.rssAggregatedLabel %> · <%= it.strings.archiveLabel %></span>
       </div>
     </div>
   </body>

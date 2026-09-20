@@ -4,6 +4,7 @@ import {
   autosavePostBody,
   createPost,
   deletePost,
+  findTranslationSibling,
   getPost,
   listPosts,
   publishPost,
@@ -13,6 +14,7 @@ import { listActiveSpaceOptions, listSpaceOptionsForPost } from "../../modules/t
 import { listCategories } from "../../modules/taxonomy/categories.js";
 import { fromMarkdown } from "../../markdown/tiptap/fromMarkdown.js";
 import { resolveCoverImage } from "../../modules/media/media.js";
+import { translatePost } from "../../modules/translation/translate.js";
 
 // Checkboxes repetidos llegan como array; ninguno tildado llega ausente.
 function toArray(value: unknown): unknown[] {
@@ -60,6 +62,8 @@ const autosaveBodySchema = z.object({ bodyMd: z.string() });
 
 const idParamSchema = z.object({ id: z.uuid() });
 
+const postQuerySchema = z.object({ translateError: z.string().optional() });
+
 export default function postRoutes(fastify: FastifyInstance): void {
   fastify.get("/", async (_request, reply) => {
     const items = await listPosts();
@@ -83,23 +87,31 @@ export default function postRoutes(fastify: FastifyInstance): void {
 
   fastify.get<{ Params: { id: string } }>("/:id", async (request, reply) => {
     const { id } = idParamSchema.parse(request.params);
+    const { translateError } = postQuerySchema.parse(request.query);
     const post = await getPost(id);
 
     if (!post) {
       return reply.code(404).send();
     }
 
-    const [spaceOptions, categoryOptions, cover] = await Promise.all([
+    const [spaceOptions, categoryOptions, cover, sibling] = await Promise.all([
       listSpaceOptionsForPost(post.spaceId),
       listCategories(),
       resolveCoverImage(post.coverMediaId),
+      findTranslationSibling(post.translationGroupId, id),
     ]);
+
+    const siblingIsStale =
+      post.lang === "es" && sibling !== null && sibling.translatedAt !== null && post.updatedAt > sibling.translatedAt;
 
     await reply.view("admin/posts/form.eta", {
       post,
       spaceOptions,
       categoryOptions,
       cover,
+      sibling,
+      siblingIsStale,
+      translateError: translateError ?? null,
       action: `/admin/posts/${id}`,
       initialDoc: fromMarkdown(post.bodyMd),
     });
@@ -128,6 +140,18 @@ export default function postRoutes(fastify: FastifyInstance): void {
 
     await autosavePostBody(id, parsed.data.bodyMd);
     return reply.code(204).send();
+  });
+
+  fastify.post<{ Params: { id: string } }>("/:id/translate", async (request, reply) => {
+    const { id } = idParamSchema.parse(request.params);
+
+    try {
+      const { id: translatedId } = await translatePost(id);
+      return await reply.redirect(`/admin/posts/${translatedId}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudo traducir el post";
+      return reply.redirect(`/admin/posts/${id}?translateError=${encodeURIComponent(message)}`);
+    }
   });
 
   fastify.post<{ Params: { id: string } }>("/:id/publish", async (request, reply) => {

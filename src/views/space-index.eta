@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es" style="--sp: <%= it.accentColor %>;">
+<html lang="<%= it.htmlLang %>" style="--sp: <%= it.accentColor %>;">
   <head>
     <%~ include("partials/head", { title: `${it.heading} · ${it.spaceName}` }) %>
   </head>
@@ -7,7 +7,7 @@
     <div class="space-shell">
       <div class="space-canto"></div>
       <div>
-        <%~ include("partials/space-nav", { spaceName: it.spaceName, centralUrl: it.centralUrl }) %>
+        <%~ include("partials/space-nav", { spaceName: it.spaceName, centralUrl: it.centralUrl, strings: it.strings, prefix: it.prefix }) %>
 
         <div class="space-hero<% if (it.cover) { %> has-cover<% } %>">
           <% if (it.cover) { %>
@@ -42,12 +42,12 @@
 
         <div class="post-list">
           <% it.items.forEach(function(post, index) { %>
-          <a href="/<%= post.slug %>" class="post-list__item">
+          <a href="<%= it.prefix %>/<%= post.slug %>" class="post-list__item">
             <div class="post-list__index"><%= String(index + 1).padStart(2, "0") %></div>
             <div>
               <div class="post-list__meta">
                 <% if (post.category) { %><span class="post-list__meta-category"><%= post.category.name %></span> ·
-                <% } %><%= post.date %> · <%= post.readingMinutes %> min
+                <% } %><%= post.date %> · <%= post.readingMinutes %> <%= it.strings.readingMinutesSuffix %>
               </div>
               <div class="post-list__title"><%= post.title %></div>
               <% if (post.excerpt) { %>
@@ -60,14 +60,18 @@
 
         <div class="pagination">
           <% if (it.page > 1) { %>
-          <a href="<%= it.basePath %>?page=<%= it.page - 1 %>" class="btn btn-secondary">Posts anteriores</a>
+          <a href="<%= it.basePath %>?page=<%= it.page - 1 %>" class="btn btn-secondary"
+            ><%= it.strings.paginationPrev %></a
+          >
           <% } %>
-          <span class="pagination__count"><%= it.page %> de <%= it.totalPages %></span>
+          <span class="pagination__count"
+            ><%= it.page %> <%= it.strings.paginationOf %> <%= it.totalPages %></span
+          >
         </div>
 
         <div class="space-footer">
           <span><%= it.subdomain %></span>
-          <span>RSS del espacio · <a href="<%= it.centralUrl %>">← todo</a></span>
+          <span><%= it.strings.rssOfSpace %> · <a href="<%= it.centralUrl %>"><%= it.strings.backToAll %></a></span>
         </div>
       </div>
     </div>
