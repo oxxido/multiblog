@@ -4,11 +4,17 @@ import fastifyCookie from "@fastify/cookie";
 import fastifyStatic from "@fastify/static";
 import { Eta } from "eta";
 import path from "node:path";
+import { mkdir } from "node:fs/promises";
 import publicRoutes from "./routes/public/index.js";
 import adminRoutes from "./routes/admin/index.js";
+import { env } from "./config/env.js";
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({ logger: true });
+
+  // @fastify/static sólo avisa (no falla) si `root` no existe todavía, pero
+  // serviría 404 para todo hasta la primera subida: se crea de antemano.
+  await mkdir(path.resolve(process.cwd(), env.MEDIA_DIR), { recursive: true });
 
   await app.register(fastifyView, {
     engine: { eta: new Eta() },
@@ -30,6 +36,19 @@ export async function buildApp(): Promise<FastifyInstance> {
     root: path.join(process.cwd(), "public/admin"),
     prefix: "/admin/static/",
     decorateReply: false,
+  });
+
+  // Tercera instancia, apuntando a MEDIA_DIR (docs/slices/07.md §0): caché
+  // larga e immutable porque el nombre de archivo es estable para siempre —
+  // volver a subir la misma foto crea una fila (y un id) nueva, nunca
+  // reescribe un archivo ya publicado.
+  await app.register(fastifyStatic, {
+    root: path.resolve(process.cwd(), env.MEDIA_DIR),
+    prefix: "/media/",
+    decorateReply: false,
+    cacheControl: true,
+    maxAge: "365d",
+    immutable: true,
   });
 
   // Los formularios del admin no llevan JS (invariante 3): se envían como

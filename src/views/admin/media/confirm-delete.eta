@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Borrar imagen · Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <header>
+      <a href="/admin/media">← Media</a>
+    </header>
+    <main>
+      <img src="<%= it.item.thumbnail %>" alt="" width="200" />
+      <p><%= it.item.filename %></p>
+
+      <% if (it.usages.length > 0) { %>
+      <p>Esta imagen está en uso en:</p>
+      <ul>
+        <% it.usages.forEach(function(usage) { %>
+        <li><%= usage.label %></li>
+        <% }) %>
+      </ul>
+      <p>
+        Borrarla saca la foto de esos lugares (vuelven a "sin foto"); una imagen embebida en el cuerpo de un post
+        queda rota.
+      </p>
+      <% } else { %>
+      <p>Esta imagen no está en uso en ningún post, espacio ni en el sitio.</p>
+      <% } %>
+
+      <form method="post" action="/admin/media/<%= it.item.id %>/delete">
+        <button type="submit">Confirmar borrado</button>
+      </form>
+    </main>
+  </body>
+</html>

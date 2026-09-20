@@ -6,7 +6,8 @@ import { env } from "../../config/env.js";
 // Anchos de derivado fijos en código (docs/slices/07.md §0): desde el frame
 // más chico de `gallery` a 4 columnas hasta una cabecera a sangre en un
 // monitor grande. Nunca se agranda un original.
-export const DERIVATIVE_WIDTHS = [320, 640, 960, 1280, 1920];
+const MIN_WIDTH = 320;
+export const DERIVATIVE_WIDTHS = [MIN_WIDTH, 640, 960, 1280, 1920];
 
 const MEDIA_URL_PATTERN = /^\/media\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.[a-z0-9]+$/i;
 
@@ -51,6 +52,13 @@ export function buildResponsiveImage({ id, width, height }: MediaDimensions): Re
     width,
     height,
   };
+}
+
+// El derivado más chico disponible: lo que usa el admin para miniaturas de
+// listado/picker (T4), donde importa el peso de la grilla, no la nitidez.
+export function buildThumbnail(id: string, originalWidth: number | null): string {
+  const widths = widthsFor(originalWidth ?? MIN_WIDTH);
+  return derivativePath(id, widths[0] ?? MIN_WIDTH);
 }
 
 export function derivativeFilePath(id: string, width: number): string {
