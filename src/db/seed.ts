@@ -112,10 +112,13 @@ async function seed(): Promise<void> {
       set: { passwordHash: hashPassword(seedEnv.ADMIN_PASSWORD) },
     });
 
-  await db
-    .insert(siteSettings)
-    .values({ id: 1, coverMediaId: null })
-    .onConflictDoUpdate({ target: siteSettings.id, set: {} });
+  // A diferencia de espacios/usuario, esta fila no tiene contenido canónico
+  // que reconciliar en cada corrida: coverMediaId lo edita el admin desde
+  // /admin/sitio. onConflictDoUpdate con un `set` vacío tira ("No values to
+  // set"), y poner coverMediaId: null ahí lo borraría en cada redeploy
+  // (docker-compose.yml corre este seed después de cada `migrate`). Sembrar
+  // una sola vez, sin tocarla si ya existe, es lo correcto acá.
+  await db.insert(siteSettings).values({ id: 1, coverMediaId: null }).onConflictDoNothing({ target: siteSettings.id });
 }
 
 await seed();
