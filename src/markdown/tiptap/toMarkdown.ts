@@ -1,6 +1,7 @@
 import { unified } from "unified";
 import remarkStringify from "remark-stringify";
 import remarkGfm from "remark-gfm";
+import remarkDirective from "remark-directive";
 import type {
   AlignType,
   BlockContent,
@@ -17,8 +18,12 @@ import type {
 } from "mdast";
 import { normalizeTiptapDoc } from "./normalize.js";
 import type { TiptapDoc, TiptapMark, TiptapNode } from "./types.js";
+import { getBlock } from "../blocks/registry.js";
 
-const compiler = unified().use(remarkStringify, { bullet: "-", fence: "`", fences: true, rule: "-" }).use(remarkGfm);
+const compiler = unified()
+  .use(remarkStringify, { bullet: "-", fence: "`", fences: true, rule: "-" })
+  .use(remarkGfm)
+  .use(remarkDirective);
 
 // Documento TipTap → Markdown. Espejo de fromMarkdown.ts: mismos siete tipos
 // de nodo base, mismas tres marcas en línea. `normalizeTiptapDoc` valida acá
@@ -34,7 +39,10 @@ export function toMarkdown(doc: TiptapDoc): string {
   return text.length > 0 ? `${text}\n` : "";
 }
 
-function blockToMdast(node: TiptapNode): BlockContent {
+// Exportada para que cada bloque rico (src/markdown/blocks/) convierta sus
+// propios hijos (párrafos) de vuelta a mdast sin reimplementar esta lógica —
+// mismo principio que blockFromMdast en fromMarkdown.ts.
+export function blockToMdast(node: TiptapNode): BlockContent {
   switch (node.type) {
     case "paragraph":
       return paragraphToMdast(node);
@@ -50,8 +58,17 @@ function blockToMdast(node: TiptapNode): BlockContent {
       return codeBlockToMdast(node);
     case "table":
       return tableToMdast(node);
-    default:
-      throw new Error(`Nodo del editor visual no soportado en Markdown: ${node.type}`);
+    default: {
+      const block = getBlock(node.type);
+      if (!block) {
+        throw new Error(`Nodo del editor visual no soportado en Markdown: ${node.type}`);
+      }
+      const directive = block.toMdast(node, blockToMdast);
+      if (directive.type === "textDirective") {
+        throw new Error(`Bloque en línea no soportado como nodo de bloque: ${node.type}`);
+      }
+      return directive;
+    }
   }
 }
 

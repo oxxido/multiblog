@@ -7,15 +7,23 @@ import rehypeShiki from "@shikijs/rehype";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeStringify from "rehype-stringify";
 import type { Schema } from "hast-util-sanitize";
+import { directiveHandlers } from "./blocks/toHast.js";
+import "./blocks/index.js";
 
 // Shiki emite `style` inline por token y una clase en el `<pre>`; el esquema
 // por defecto de rehype-sanitize los elimina. Se amplía acotado a lo que el
-// resaltado necesita, no se saltea el saneado.
+// resaltado necesita, no se saltea el saneado. `figure`/`figcaption` los usa
+// `gallery` (S6); `iframe` lo usa `youtube` (S6), acotado a `src`/`loading` —
+// el resto de sus atributos (`width`, `height`, `title`) ya están en la
+// lista `*`, y `src` hereda la restricción de protocolo http/https que
+// rehype-sanitize ya aplica por defecto a esa propiedad.
 const schema: Schema = {
   ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames ?? []), "figure", "figcaption", "iframe"],
   attributes: {
     ...defaultSchema.attributes,
     "*": [...(defaultSchema.attributes?.["*"] ?? []), "className", "style"],
+    iframe: ["src", "loading"],
   },
 };
 
@@ -23,7 +31,7 @@ const processor = unified()
   .use(remarkParse)
   .use(remarkGfm)
   .use(remarkDirective)
-  .use(remarkRehype)
+  .use(remarkRehype, { handlers: directiveHandlers })
   .use(rehypeShiki, { theme: "github-dark" })
   .use(rehypeSanitize, schema)
   .use(rehypeStringify);

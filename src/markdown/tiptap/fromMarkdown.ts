@@ -1,6 +1,7 @@
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
+import remarkDirective from "remark-directive";
 import type {
   AlignType,
   Code,
@@ -15,22 +16,24 @@ import type {
 } from "mdast";
 import { normalizeTiptapDoc } from "./normalize.js";
 import type { TiptapDoc, TiptapMark, TiptapNode } from "./types.js";
+import { resolveBlock } from "../blocks/registry.js";
 
-const parser = unified().use(remarkParse).use(remarkGfm);
+const parser = unified().use(remarkParse).use(remarkGfm).use(remarkDirective);
 
-// mdast → documento TipTap. Cubre exactamente los siete tipos de nodo base
-// de docs/slices/05.md §0 (párrafo, encabezado, lista, enlace, código, cita,
-// tabla) más negrita/itálica/código en línea. Cualquier otra sintaxis
-// (bloques ricos de S6, tachado, imágenes, etc.) no se descarta en
-// silencio: lanza, porque perder contenido al abrir el editor visual sería
-// romper el invariante 1 sin que nadie se entere.
+// mdast → documento TipTap. Cubre los siete tipos de nodo base de
+// docs/slices/05.md §0 (párrafo, encabezado, lista, enlace, código, cita,
+// tabla) más negrita/itálica/código en línea, y delega los bloques ricos de
+// S6 (`containerDirective`/`leafDirective`) al registro — un bloque nuevo no
+// toca este archivo. Cualquier otra sintaxis no se descarta en silencio:
+// lanza, porque perder contenido al abrir el editor visual sería romper el
+// invariante 1 sin que nadie se entere.
 export function fromMarkdown(markdown: string): TiptapDoc {
   const root = parser.parse(markdown);
   const doc: TiptapDoc = { type: "doc", content: root.children.map(blockFromMdast) };
   return normalizeTiptapDoc(doc);
 }
 
-function blockFromMdast(node: RootContent): TiptapNode {
+export function blockFromMdast(node: RootContent): TiptapNode {
   switch (node.type) {
     case "paragraph":
       return { type: "paragraph", content: inlineFromMdast(node.children) };
@@ -44,6 +47,11 @@ function blockFromMdast(node: RootContent): TiptapNode {
       return codeBlockFromMdast(node);
     case "table":
       return tableFromMdast(node);
+    case "containerDirective":
+    case "leafDirective": {
+      const { block, attrs } = resolveBlock(node);
+      return block.fromMdast(node, attrs, blockFromMdast);
+    }
     default:
       throw new Error(`Nodo de Markdown no soportado en el editor visual: ${node.type}`);
   }
