@@ -10,6 +10,7 @@
       "Bash(git commit:*)",
       "Bash(docker compose:*)",
       "Bash(git push:*)",
+      "Bash(gh pr create:*)"
     ],
     "deny": [
       "Bash(git reset --hard:*)",
