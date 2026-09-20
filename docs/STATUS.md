@@ -224,9 +224,86 @@ implementar:
 **No se tocó el stack de producción de esta máquina** (mismo motivo que S3,
 S4 y S5). Redeploy pendiente de que el usuario lo pida.
 
+## Slice hecha (código), pendiente de redeploy
+
+**S7 — Media.** Implementada según `docs/slices/07.md` (T1–T10) en la rama
+`s7-media`, validada contra el Postgres de dev, con `pnpm lint && pnpm
+typecheck && pnpm test` en verde (70 tests, 15 nuevos: 7 unit en
+`tests/unit/media/derivatives.test.ts`, 3 de round-trip en
+`tests/roundtrip/image.test.ts` y 5 de acceptance en
+`tests/acceptance/s7.test.ts`), y en un navegador real (Chromium vía
+Playwright contra `pnpm dev`: login, subir una imagen, elegir portada de
+post/espacio/sitio con el picker en ventana propia, insertar imagen suelta
+y galería desde el editor, publicar y confirmar `srcset`/`width`/`height`
+en las tres formas de uso en el HTML público de `ideas.localhost` y en la
+home central).
+
+`sharp` y `@fastify/multipart` nuevas (D15). `src/modules/media/` trae
+`derivatives.ts` (puro: anchos fijos, `buildResponsiveImage`,
+`buildThumbnail`, `parseMediaUrl` — sin I/O ni `env.ts`, ver más abajo),
+`storage.ts` (disco: `generateDerivatives` con sharp, rutas de archivo) y
+`media.ts` (`uploadMedia`, `listMedia`, `findMediaUsage`, `deleteMedia`,
+`resolveCoverImage`/`resolveSiteCoverImage`). `/admin/media` (listado +
+subida), `/admin/media/:id/delete` (confirmación con dónde se usa antes de
+borrar) y `/admin/media/picker` (misma grilla en modo single/multi,
+`postMessage` a quien la abre). Tercera instancia de `@fastify/static` sirve
+`MEDIA_DIR` bajo `/media/` con caché larga. `src/markdown/mediaImages.ts`
+(plugin remark, entre `remarkDirective` y `remarkRehype`) enriquece
+imágenes sueltas del cuerpo con `srcset`/`width`/`height`/`loading`;
+`gallery.ts` (S6) usa el mismo helper para sus propias imágenes de
+biblioteca. Portadas de post, espacio y sitio (`site_settings`, tabla
+nueva, D15) con un picker compartido (`admin-client/mediaPicker.ts` +
+`coverPicker.ts`) y variante "con foto" en CSS para las tres cabeceras
+(`--ph`, degradado, Design.md §1). El botón "Imagen" y el rediseño del
+botón "Galería" del editor visual también usan el picker.
+
+Ajustes que no estaban en el desglose original y aparecieron al
+implementar:
+
+- **`derivatives.ts` se separó de `storage.ts`.** El desglose preveía un
+  solo archivo de "núcleo de derivados", pero `gallery.ts` y
+  `mediaImages.ts` sólo necesitan las funciones puras (sin tocar disco); al
+  importar el archivo completo arrastraban `env.ts` (`MEDIA_DIR`) y rompían
+  `tests/roundtrip/` (fromMarkdown/toMarkdown corren sin servidor ni
+  variables de entorno). Separar puro de disco resolvió esto sin duplicar
+  lógica.
+- **El esquema TipTap no tenía ningún nodo para `![alt](url)` suelto.**
+  Detectado al planificar el botón "Imagen" (T9): una imagen fuera de un
+  `gallery` ya rompía el editor visual al abrirse (nodo no soportado), desde
+  antes de esta slice. Se agregó `tiptap/imageNode.ts` (nodo en línea,
+  atómico, junto a los demás nodos base) y su conversión en
+  `fromMarkdown.ts`/`toMarkdown.ts`, con round-trip nuevo — consultado con
+  el usuario antes de tocar el formato canónico del editor, como pide
+  `CLAUDE.md`.
+- **`docker-compose.yml` (volumen `media_data` + `MEDIA_DIR` en `app`) y
+  `package.json` (entry points nuevos de esbuild para
+  `picker.ts`/`coverPicker.ts`) no estaban en la lista de archivos de
+  ningún task del desglose,** aunque el criterio de aceptación y la
+  narrativa de T4/T9 los dan por sentado. Se tocaron igual, documentados
+  acá en vez de en el desglose.
+- **El glob `tests/**/*.test.ts` de `pnpm test`/`test:roundtrip` no es
+  recursivo sin `shopt -s globstar`** (no activado en bash): un archivo en
+  `tests/unit/media/` (un nivel más anidado que lo que había hasta S6) no
+  corría. Se cambió a `find ... | sort`, independiente del shell.
+- **`@fastify/multipart` no resuelve `toBuffer()` con un buffer truncado**
+  cuando se supera `limits.fileSize` (como asumía la validación de tamaño
+  de `uploadMedia`): rechaza la promesa con `FST_REQ_FILE_TOO_LARGE`. La
+  ruta lo atrapa y devuelve 400, igual que `MediaValidationError`.
+- **`seed.ts` no podía sembrar `site_settings`:** `onConflictDoUpdate` con
+  un `set: {}` tira ("No values to set") aunque no haya conflicto real —
+  drizzle lo valida al construir la query. Encontrado recién al validar la
+  slice completa en un navegador contra el Postgres de dev: el primer
+  seed real (`migrate` de `docker-compose.yml`) habría roto el contenedor.
+  Se cambió a `onConflictDoNothing`: la fila se siembra una sola vez y
+  nunca se vuelve a tocar desde acá, porque `coverMediaId` lo edita el
+  admin y un `set` con valor fijo lo borraría en cada redeploy.
+
+**No se tocó el stack de producción de esta máquina** (mismo motivo que
+S3–S6: el puerto 3000 ya lo sirve `multiblog-prod-app-1`). Redeploy
+pendiente de que el usuario lo pida — necesita, además del `git pull`
+habitual, que el volumen `media_data` nuevo quede disponible para `app`.
+
 ## Próxima
 
-S7 — Media: biblioteca de medios y subida de imágenes. `gallery` (S6) sigue
-aceptando cualquier URL hasta entonces; insertar una imagen de la
-biblioteca dentro de un `gallery` será sólo escribir su URL, sin cambios en
-el registro de bloques.
+S8 — bilingüe (`docs/I18N.md` §7, D13): UI de traducción sobre el esquema
+que ya trae `lang`/`translation_group_id` desde S2 (D8).
