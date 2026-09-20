@@ -1,0 +1,18 @@
+<div class="space-grid">
+  <% it.spaces.forEach(function(space) { %>
+  <a href="<%= space.url %>" class="blueprint space-card">
+    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+    <div class="space-card__name">
+      <span class="space-card__dot" style="background: <%= space.accentColor %>;"></span>
+      <span><%= space.name %></span>
+    </div>
+    <% if (space.description) { %>
+    <p class="space-card__desc"><%= space.description %></p>
+    <% } %>
+    <div class="space-card__meta">
+      <span><%= space.subdomain %></span>
+      <span><%= space.publishedCount %></span>
+    </div>
+  </a>
+  <% }) %>
+</div>

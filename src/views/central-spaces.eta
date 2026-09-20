@@ -6,7 +6,6 @@
       canonical: it.canonical,
       ogType: it.ogType,
       ogTitle: it.ogTitle,
-      ogDescription: it.ogDescription,
       ogImage: it.ogImage,
     }) %>
   </head>
@@ -33,38 +32,12 @@
           </div>
         </div>
         <div>
-          <h1><%~ it.strings.centralHeadline %></h1>
-          <% if (it.spaceNames) { %>
-          <p class="central-hero__lead"><%= it.spaceNames %>. <%= it.strings.centralLeadSuffix %></p>
-          <% } %>
+          <h1><%= it.heading %></h1>
         </div>
-      </div>
-
-      <div class="central-section" id="espacios">
-        <div class="central-section__header">
-          <div class="central-section__title"><%= it.strings.spacesNavLabel %></div>
-          <div class="central-section__count">
-            <%= it.activeCount %> <%= it.strings.activeCountLabel %> · <%= it.totalPublished %>
-            <%= it.strings.publishedCountLabel %>
-          </div>
-        </div>
-        <%~ include("partials/space-grid", { spaces: it.spaces }) %>
       </div>
 
       <div class="central-section">
-        <div class="central-section__title" style="margin-bottom: 8px;"><%= it.strings.latestSectionTitle %></div>
-        <%~ include("partials/latest-list", { items: it.latest }) %>
-      </div>
-
-      <div class="central-section" id="tags">
-        <div class="tag-row">
-          <div class="tag-row__title"><%= it.strings.crossTagsSectionTitle %></div>
-          <div class="tag-row__tags">
-            <% it.tags.forEach(function(tag) { %>
-            <a href="<%= it.prefix %>/t/<%= tag.slug %>" class="tag tag-outline"><%= tag.name %> · <%= tag.count %></a>
-            <% }) %>
-          </div>
-        </div>
+        <%~ include("partials/space-grid", { spaces: it.spaces }) %>
       </div>
 
       <div class="central-footer">

@@ -1,0 +1,14 @@
+<div class="latest-list">
+  <% it.items.forEach(function(item) { %>
+  <a href="<%= item.url %>" class="latest-item">
+    <span class="latest-item__dot" style="background: <%= item.accentColor %>;"></span>
+    <span>
+      <span class="latest-item__title"><%= item.title %></span>
+      <% if (item.excerpt) { %>
+      <span class="latest-item__excerpt"><%= item.excerpt %></span>
+      <% } %>
+    </span>
+    <span class="latest-item__date"><%= item.date %></span>
+  </a>
+  <% }) %>
+</div>

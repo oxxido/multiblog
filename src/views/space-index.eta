@@ -1,7 +1,14 @@
 <!doctype html>
 <html lang="<%= it.htmlLang %>" style="--sp: <%= it.accentColor %>;">
   <head>
-    <%~ include("partials/head", { title: `${it.heading} · ${it.spaceName}` }) %>
+    <%~ include("partials/head", {
+      title: `${it.heading} · ${it.spaceName}`,
+      canonical: it.canonical,
+      ogType: it.ogType,
+      ogTitle: it.ogTitle,
+      ogDescription: it.ogDescription,
+      ogImage: it.ogImage,
+    }) %>
   </head>
   <body>
     <div class="space-shell">
@@ -71,7 +78,7 @@
 
         <div class="space-footer">
           <span><%= it.subdomain %></span>
-          <span><%= it.strings.rssOfSpace %> · <a href="<%= it.centralUrl %>"><%= it.strings.backToAll %></a></span>
+          <span><a href="<%= it.prefix %>/feed.xml"><%= it.strings.rssOfSpace %></a> · <a href="<%= it.centralUrl %>"><%= it.strings.backToAll %></a></span>
         </div>
       </div>
     </div>

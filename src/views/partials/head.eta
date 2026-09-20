@@ -12,4 +12,13 @@
 <link rel="canonical" href="<%= it.canonical %>" />
 <% } %> <% if (it.alternates) { %> <% it.alternates.forEach(function(alternate) { %>
 <link rel="alternate" hreflang="<%= alternate.hreflang %>" href="<%= alternate.href %>" />
-<% }) %> <% } %>
+<% }) %> <% } %> <% if (it.ogType) { %>
+<meta property="og:type" content="<%= it.ogType %>" />
+<meta property="og:title" content="<%= it.ogTitle %>" />
+<% if (it.ogDescription) { %>
+<meta property="og:description" content="<%= it.ogDescription %>" />
+<% } %> <% if (it.canonical) { %>
+<meta property="og:url" content="<%= it.canonical %>" />
+<% } %> <% if (it.ogImage) { %>
+<meta property="og:image" content="<%= it.ogImage %>" />
+<% } %> <% } %>
