@@ -11,6 +11,7 @@ const { buildApp } = await import("../../src/app.js");
 const { db, closeDb } = await import("../../src/db/client.js");
 const { posts, spaces, users } = await import("../../src/db/schema.js");
 const { hashPassword } = await import("../../src/modules/auth/password.js");
+const { createCategory } = await import("../../src/modules/taxonomy/categories.js");
 
 after(closeDb);
 
@@ -343,6 +344,123 @@ test("un post sin traducir no aparece en el índice del espacio en /en/ ni en la
   const centralIndex = await app.inject({ method: "GET", url: "/en/", headers: { host: "localhost" } });
   assert.equal(centralIndex.statusCode, 200);
   assert.doesNotMatch(centralIndex.body, new RegExp(untranslatedTitle));
+
+  await app.close();
+});
+
+test("post con ambas versiones publicadas tiene hreflang recíproco y x-default en las dos páginas", async (t) => {
+  const app = await buildApp();
+  const cookie = await login(app);
+  const space = await getSpace("nutricion");
+
+  const original = await publishWithBody(app, cookie, space.id, SAMPLE_BODY_MD);
+  const translatedSlug = `hreflang-check-${randomUUID().slice(0, 8)}`;
+
+  t.mock.method(globalThis, "fetch", () =>
+    chatCompletionResponse(
+      JSON.stringify({
+        title: "Hreflang check",
+        excerpt: "Translated excerpt",
+        slug: translatedSlug,
+        bodyMd: TRANSLATED_BODY_MD_OK,
+      }),
+    ),
+  );
+
+  const translateResponse = await app.inject({
+    method: "POST",
+    url: `/admin/posts/${original.id}/translate`,
+    headers: { cookie },
+  });
+  const translatedId = translateResponse.headers.location?.toString().split("/").pop();
+  assert.ok(translatedId);
+  await app.inject({ method: "POST", url: `/admin/posts/${translatedId}/publish`, headers: { cookie } });
+
+  const host = `${space.subdomain}.localhost`;
+  const esUrl = `http://${host}/${original.slug}`;
+  const enUrl = `http://${host}/en/${translatedSlug}`;
+
+  const esPage = await app.inject({ method: "GET", url: `/${original.slug}`, headers: { host } });
+  assert.equal(esPage.statusCode, 200);
+  assert.match(esPage.body, new RegExp(`rel="canonical" href="${esUrl}"`));
+  assert.match(esPage.body, new RegExp(`rel="alternate" hreflang="en" href="${enUrl}"`));
+  assert.match(esPage.body, new RegExp(`rel="alternate" hreflang="x-default" href="${esUrl}"`));
+
+  const enPage = await app.inject({ method: "GET", url: `/en/${translatedSlug}`, headers: { host } });
+  assert.equal(enPage.statusCode, 200);
+  assert.match(enPage.body, new RegExp(`rel="canonical" href="${enUrl}"`));
+  assert.match(enPage.body, new RegExp(`rel="alternate" hreflang="es" href="${esUrl}"`));
+  assert.match(enPage.body, new RegExp(`rel="alternate" hreflang="x-default" href="${esUrl}"`));
+
+  await app.close();
+});
+
+test("/en/c/{categoria} resuelve sobre un espacio", async (t) => {
+  const app = await buildApp();
+  const cookie = await login(app);
+  const space = await getSpace("ideas");
+
+  const categorySuffix = randomUUID().slice(0, 8);
+  const categorySlug = `cat-s8-${categorySuffix}`;
+  const { id: categoryId } = await createCategory(space.id, {
+    slug: categorySlug,
+    name: `Categoría S8 ${categorySuffix}`,
+    description: null,
+  });
+
+  const original = await publishWithBody(app, cookie, space.id, SAMPLE_BODY_MD);
+
+  t.mock.method(globalThis, "fetch", () =>
+    chatCompletionResponse(
+      JSON.stringify({
+        title: "Category route check",
+        excerpt: "Translated excerpt",
+        slug: `category-route-check-${randomUUID().slice(0, 8)}`,
+        bodyMd: TRANSLATED_BODY_MD_OK,
+      }),
+    ),
+  );
+
+  const translateResponse = await app.inject({
+    method: "POST",
+    url: `/admin/posts/${original.id}/translate`,
+    headers: { cookie },
+  });
+  const translatedId = translateResponse.headers.location?.toString().split("/").pop();
+  assert.ok(translatedId);
+
+  const [translatedRow] = await db
+    .select({ slug: posts.slug, title: posts.title, bodyMd: posts.bodyMd })
+    .from(posts)
+    .where(eq(posts.id, translatedId))
+    .limit(1);
+  assert.ok(translatedRow);
+
+  const assignCategoryResponse = await app.inject({
+    method: "POST",
+    url: `/admin/posts/${translatedId}`,
+    ...form(
+      {
+        spaceId: space.id,
+        slug: translatedRow.slug,
+        title: translatedRow.title,
+        excerpt: "",
+        bodyMd: translatedRow.bodyMd,
+        categoryIds: categoryId,
+      },
+      cookie,
+    ),
+  });
+  assert.equal(assignCategoryResponse.statusCode, 302, assignCategoryResponse.body);
+  await app.inject({ method: "POST", url: `/admin/posts/${translatedId}/publish`, headers: { cookie } });
+
+  const categoryPage = await app.inject({
+    method: "GET",
+    url: `/en/c/${categorySlug}`,
+    headers: { host: `${space.subdomain}.localhost` },
+  });
+  assert.equal(categoryPage.statusCode, 200);
+  assert.match(categoryPage.body, /Category route check/);
 
   await app.close();
 });
