@@ -1,4 +1,5 @@
-import { and, asc, count, desc, eq, gt, inArray, lt } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
+import { and, asc, count, desc, eq, gt, inArray, lt, ne } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { categories, postCategories, posts, postSlugs, postTags, spaces, tags } from "../../db/schema.js";
 import { renderMarkdown } from "../../markdown/pipeline.js";
@@ -13,6 +14,11 @@ export interface PostSummary {
   status: "draft" | "scheduled" | "published";
   spaceName: string;
   updatedAt: Date;
+  lang: "es" | "en";
+  // Verdadero cuando el original de esta traducción se editó después de la
+  // última corrida del traductor (docs/slices/08.md T6): "editar el original
+  // en silencio no desactualiza en silencio la traducción".
+  isStale: boolean;
 }
 
 export interface PostDetail {
@@ -25,6 +31,10 @@ export interface PostDetail {
   status: "draft" | "scheduled" | "published";
   categoryIds: string[];
   coverMediaId: string | null;
+  lang: "es" | "en";
+  translationGroupId: string;
+  sourcePostId: string | null;
+  sourceUpdatedAt: Date | null;
 }
 
 export interface PostInput {
@@ -61,7 +71,9 @@ async function syncPostCategories(postId: string, spaceId: string, categoryIds: 
 }
 
 export async function listPosts(): Promise<PostSummary[]> {
-  return db
+  const sourcePost = alias(posts, "source_post");
+
+  const rows = await db
     .select({
       id: posts.id,
       slug: posts.slug,
@@ -69,11 +81,26 @@ export async function listPosts(): Promise<PostSummary[]> {
       status: posts.status,
       spaceName: spaces.name,
       updatedAt: posts.updatedAt,
+      lang: posts.lang,
+      translatedAt: posts.translatedAt,
+      sourceUpdatedAt: sourcePost.updatedAt,
     })
     .from(posts)
     .innerJoin(spaces, eq(posts.spaceId, spaces.id))
+    .leftJoin(sourcePost, eq(posts.sourcePostId, sourcePost.id))
     .orderBy(desc(posts.updatedAt))
     .limit(LIST_LIMIT);
+
+  return rows.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    status: row.status,
+    spaceName: row.spaceName,
+    updatedAt: row.updatedAt,
+    lang: row.lang,
+    isStale: row.translatedAt !== null && row.sourceUpdatedAt !== null && row.sourceUpdatedAt > row.translatedAt,
+  }));
 }
 
 export async function getPost(id: string): Promise<PostDetail | null> {
@@ -87,6 +114,10 @@ export async function getPost(id: string): Promise<PostDetail | null> {
       bodyMd: posts.bodyMd,
       status: posts.status,
       coverMediaId: posts.coverMediaId,
+      lang: posts.lang,
+      translationGroupId: posts.translationGroupId,
+      sourcePostId: posts.sourcePostId,
+      sourceUpdatedAt: posts.sourceUpdatedAt,
     })
     .from(posts)
     .where(eq(posts.id, id))
@@ -492,6 +523,27 @@ export async function countPublishedPostsByCategory(
     );
 
   return row?.value ?? 0;
+}
+
+export interface TranslationSibling {
+  id: string;
+  slug: string;
+  status: "draft" | "scheduled" | "published";
+}
+
+// El grupo de traducción sólo tiene es/en (docs/I18N.md §1): el hermano de
+// un post es, sencillamente, la otra fila del mismo grupo.
+export async function findTranslationSibling(
+  translationGroupId: string,
+  excludeId: string,
+): Promise<TranslationSibling | null> {
+  const [row] = await db
+    .select({ id: posts.id, slug: posts.slug, status: posts.status })
+    .from(posts)
+    .where(and(eq(posts.translationGroupId, translationGroupId), ne(posts.id, excludeId)))
+    .limit(1);
+
+  return row ?? null;
 }
 
 export async function findCurrentSlugForRedirect(
