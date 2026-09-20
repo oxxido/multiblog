@@ -2,23 +2,21 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title><%= it.post ? "Editar post" : "Nuevo post" %> · Admin</title>
+    <title>Editar post · Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
   <body>
     <header>
       <a href="/admin/posts">← Posts</a>
-      <% if (it.post) { %>
       <span>Estado: <%= it.post.status %></span>
-      <% } %>
     </header>
     <main>
-      <form method="post" action="<%= it.action %>">
+      <form method="post" action="<%= it.action %>" data-post-id="<%= it.post.id %>">
         <label>
           Espacio
           <select name="spaceId" required>
             <% it.spaceOptions.forEach(function(space) { %>
-            <option value="<%= space.id %>" <%= it.post && it.post.spaceId === space.id ? "selected" : "" %>>
+            <option value="<%= space.id %>" <%= it.post.spaceId === space.id ? "selected" : "" %>>
               <%= space.name %>
             </option>
             <% }) %>
@@ -26,19 +24,23 @@
         </label>
         <label>
           Slug
-          <input type="text" name="slug" required value="<%= it.post ? it.post.slug : "" %>" />
+          <input type="text" name="slug" required value="<%= it.post.slug %>" />
         </label>
         <label>
           Título
-          <input type="text" name="title" required value="<%= it.post ? it.post.title : "" %>" />
+          <input type="text" name="title" required value="<%= it.post.title %>" />
         </label>
         <label>
           Extracto
-          <input type="text" name="excerpt" value="<%= it.post && it.post.excerpt ? it.post.excerpt : "" %>" />
+          <input type="text" name="excerpt" value="<%= it.post.excerpt ? it.post.excerpt : "" %>" />
         </label>
+        <div>
+          <button type="button" data-editor-toggle>Ver Markdown</button>
+        </div>
+        <div id="editor-visual" data-initial-doc="<%= JSON.stringify(it.initialDoc) %>"></div>
         <label>
           Markdown
-          <textarea name="bodyMd" rows="20" required><%= it.post ? it.post.bodyMd : "" %></textarea>
+          <textarea name="bodyMd" rows="20" required><%= it.post.bodyMd %></textarea>
         </label>
         <fieldset>
           <legend>Categorías</legend>
@@ -48,7 +50,7 @@
               type="checkbox"
               name="categoryIds"
               value="<%= category.id %>"
-              <%= it.post && it.post.categoryIds.includes(category.id) ? "checked" : "" %>
+              <%= it.post.categoryIds.includes(category.id) ? "checked" : "" %>
             />
             <%= category.name %> (<%= category.spaceName %>)
           </label>
@@ -57,14 +59,13 @@
         <button type="submit">Guardar</button>
       </form>
 
-      <% if (it.post) { %>
       <form method="post" action="/admin/posts/<%= it.post.id %>/publish">
         <button type="submit">Publicar</button>
       </form>
       <form method="post" action="/admin/posts/<%= it.post.id %>/delete">
         <button type="submit">Borrar</button>
       </form>
-      <% } %>
     </main>
+    <script type="module" src="/admin/static/editor.js"></script>
   </body>
 </html>

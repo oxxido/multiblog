@@ -3,3 +3,5 @@ dist/
 .env
 .env.local
 .claude/settings.local.json
+# Bundle de esbuild (T3 de docs/slices/05.md); public/css/ sí es fuente versionada.
+public/admin/

@@ -82,6 +82,17 @@ test("flujo completo: login, crear post, borrador 404, publicar, cambiar slug co
   const createResponse = await app.inject({
     method: "POST",
     url: "/admin/posts",
+    ...form({ spaceId: space.id, slug, title: "Post de prueba S2", excerpt: "" }, cookie),
+  });
+  assert.equal(createResponse.statusCode, 302);
+  const postId = createResponse.headers.location?.toString().split("/").pop();
+  assert.ok(postId);
+
+  // Paso mínimo de creación (S5): el cuerpo se escribe en la pantalla de
+  // edición completa, no en el alta.
+  const setBodyResponse = await app.inject({
+    method: "POST",
+    url: `/admin/posts/${postId}`,
     ...form(
       {
         spaceId: space.id,
@@ -93,9 +104,7 @@ test("flujo completo: login, crear post, borrador 404, publicar, cambiar slug co
       cookie,
     ),
   });
-  assert.equal(createResponse.statusCode, 302);
-  const postId = createResponse.headers.location?.toString().split("/").pop();
-  assert.ok(postId);
+  assert.equal(setBodyResponse.statusCode, 302);
 
   const draftResponse = await app.inject({
     method: "GET",

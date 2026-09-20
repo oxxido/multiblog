@@ -163,6 +163,15 @@ export async function updatePost(id: string, input: PostInput): Promise<void> {
   await syncPostCategories(id, input.spaceId, input.categoryIds);
 }
 
+// Mismo alcance que ya tenía el botón "Guardar" de S2/S3 sobre el cuerpo
+// (también reescribe body_html sin mirar status): el autosave lo hace
+// automático, no le suma un riesgo nuevo. Nunca toca slug, title, status ni
+// categorías (docs/slices/05.md §0).
+export async function autosavePostBody(id: string, bodyMd: string): Promise<void> {
+  const bodyHtml = await renderMarkdown(bodyMd);
+  await db.update(posts).set({ bodyMd, bodyHtml, updatedAt: new Date() }).where(eq(posts.id, id));
+}
+
 export async function publishPost(id: string): Promise<void> {
   await db
     .update(posts)

@@ -109,8 +109,63 @@ como el resto de los ajustes de slice):
 el puerto 3000 ya lo sirve `multiblog-prod-app-1`). Redeploy pendiente de
 que el usuario lo pida.
 
+## Slice hecha (código), pendiente de redeploy
+
+**S5 — Editor visual.** Implementada según `docs/slices/05.md` (T1–T6) en la
+rama `s5-editor-visual`, validada contra el Postgres de dev.
+`pnpm lint && pnpm typecheck && pnpm test` en verde (45 tests; 18 nuevos de
+round-trip en `tests/roundtrip/` — uno por tipo de nodo base más un caso de
+cuerpo vacío — y acceptance nueva en `tests/acceptance/s5.test.ts`: alta
+mínima con `body_md` vacío, autosave que sólo toca cuerpo, reapertura con el
+mismo Markdown en crudo y en el documento del editor visual, autosave sobre
+un post publicado sin cambiarle el estado).
+
+`src/markdown/tiptap/` trae `fromMarkdown`/`toMarkdown` (remark-parse +
+remark-gfm para leer, remark-stringify + remark-gfm para escribir) y
+`extensions.ts` con la lista de nodos TipTap (StarterKit, Link, Table) que
+usan tanto el conversor como el editor de cliente. `src/admin-client/editor.ts`
+monta TipTap sobre el formulario de post, alterna visual/crudo sin cambiar
+qué envía el `<form>`, y dispara el autosave (`POST
+/admin/posts/:id/autosave`, sólo `body_md`/`body_html`) con 2s de debounce.
+Bundle armado con esbuild (dependencia nueva) y servido bajo
+`/admin/static/` por una segunda instancia de `@fastify/static`; el sitio
+público no lo referencia (invariante 3 intacta). `/admin/posts/new` pasó a
+pedir sólo espacio, título, slug y extracto (`new.eta`, nuevo); el cuerpo se
+escribe en `/admin/posts/{id}`, la pantalla de edición completa (`form.eta`).
+
+Ajustes que no estaban en el desglose original y aparecieron al implementar:
+
+- **TipTap 3 ya trae `Link` adentro de `StarterKit`** (no era así cuando se
+  escribió `docs/slices/05.md`): se desactiva con
+  `StarterKit.configure({ link: false })` y se agrega por separado, para
+  poder configurarlo explícitamente sin el aviso de "extensión duplicada".
+- **Dos archivos más en `src/markdown/tiptap/`** de los que listaba T1:
+  `types.ts` (los tipos `TiptapNode`/`TiptapDoc`/`TiptapMark`) y
+  `normalize.ts` (valida cualquier documento —venga de `fromMarkdown` o del
+  cliente— contra el esquema real de `extensions.ts` antes de convertirlo,
+  vía `prosemirror-model`). Separarlos de `fromMarkdown.ts`/`toMarkdown.ts`
+  no cambia la interfaz pública que describía la slice.
+- **Un documento vacío serializa sin la clave `content`** (así lo hace
+  `Node#toJSON` de prosemirror-model, no un array vacío): `TiptapDoc.content`
+  quedó opcional y `toMarkdown` lo trata como `?? []`. Importa porque un post
+  recién creado por el paso mínimo de T5 arranca exactamente así.
+- **`@types/mdast` como dependencia explícita** (antes llegaba transitivo):
+  necesario para tipar `fromMarkdown.ts`/`toMarkdown.ts` sin `any`.
+- **`eslint.config.js` ignora `public/admin/**`**: es el bundle generado por
+  esbuild, no código fuente; sin el ignore, eslint intentaba tipar el bundle
+  minificado.
+- **Los helpers de creación de post en `tests/acceptance/{s2,s3,s4}.test.ts`
+  pasaron a dos pasos** (alta mínima + `POST /admin/posts/{id}` para el
+  cuerpo y las categorías): el endpoint de alta ya no acepta `bodyMd` ni
+  `categoryIds`, consecuencia directa del paso mínimo de creación de T5, no
+  un cambio de comportamiento de esas slices.
+
+**No se tocó el stack de producción de esta máquina** (mismo motivo que S3 y
+S4). Redeploy pendiente de que el usuario lo pida.
+
 ## Próxima
 
-S5 — Editor visual (TipTap), la slice más grande: conversión bidireccional
-TipTap ↔ Markdown, alternar visual/crudo sin perder nada, guardado
-automático de borrador. Desglose en `docs/slices/05.md`.
+S6 — Bloques ricos: registro de bloques (`SPEC.md` §3), `remark-directive`
+en el pipeline, los primeros tres bloques (`callout`, `gallery`, `youtube`)
+con su nodo TipTap y su test de round-trip, insertables desde una barra del
+editor que ya trajo S5.
