@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es" style="--sp: <%= it.accentColor %>;">
+<html lang="<%= it.htmlLang %>" style="--sp: <%= it.accentColor %>;">
   <head>
     <%~ include("partials/head", { title: it.title }) %>
   </head>
@@ -7,7 +7,7 @@
     <div class="space-shell">
       <div class="space-canto"></div>
       <div>
-        <%~ include("partials/space-nav", { spaceName: it.spaceName, centralUrl: it.centralUrl }) %>
+        <%~ include("partials/space-nav", { spaceName: it.spaceName, centralUrl: it.centralUrl, strings: it.strings, prefix: it.prefix }) %>
 
         <div class="post-panorama">
           <% if (it.cover) { %>
@@ -27,7 +27,7 @@
         <div class="post-context">
           <div class="post-context__meta">
             <% if (it.category) { %><strong><%= it.category.name %></strong> · <% } %><%= it.date %> ·
-            <%= it.readingMinutes %> min
+            <%= it.readingMinutes %> <%= it.strings.readingMinutesSuffix %>
           </div>
         </div>
 
@@ -52,11 +52,11 @@
           <% if (it.prev || it.next) { %>
           <div class="post-adjacent">
             <% if (it.prev) { %>
-            <a href="/<%= it.prev.slug %>">← <%= it.prev.title %></a>
+            <a href="<%= it.prefix %>/<%= it.prev.slug %>">← <%= it.prev.title %></a>
             <% } else { %>
             <span></span>
             <% } %> <% if (it.next) { %>
-            <a href="/<%= it.next.slug %>"><%= it.next.title %> →</a>
+            <a href="<%= it.prefix %>/<%= it.next.slug %>"><%= it.next.title %> →</a>
             <% } %>
           </div>
           <% } %>
@@ -64,7 +64,7 @@
 
         <div class="post-footer">
           <span><%= it.postUrl %></span>
-          <span>RSS del espacio · <a href="<%= it.centralUrl %>">← todo</a></span>
+          <span><%= it.strings.rssOfSpace %> · <a href="<%= it.centralUrl %>"><%= it.strings.backToAll %></a></span>
         </div>
       </div>
     </div>
