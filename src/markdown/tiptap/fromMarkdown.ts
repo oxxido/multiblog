@@ -120,6 +120,8 @@ function inlineNodeFromMdast(node: PhrasingContent, marks: TiptapMark[]): Tiptap
       return [textNode(node.value, [...marks, { type: "code" }])];
     case "link":
       return inlineFromMdast(node.children, [...marks, linkMark(node)]);
+    case "image":
+      return [{ type: "image", attrs: { src: node.url, alt: node.alt ?? "" } }];
     default:
       throw new Error(`Marca de Markdown no soportada en el editor visual: ${node.type}`);
   }
