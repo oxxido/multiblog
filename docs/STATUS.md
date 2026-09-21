@@ -440,9 +440,77 @@ Ajustes que no estaban en el desglose original y aparecieron al implementar:
 S3–S8: el puerto 3000 ya lo sirve `multiblog-prod-app-1`). Redeploy
 pendiente de que el usuario lo pida.
 
+## Slice hecha (código), pendiente de redeploy
+
+**S10 — Flujo de escritura.** Implementada según `docs/slices/10.md`
+(T1–T10) en la rama `s10-flujo-escritura`, validada contra el Postgres de
+dev. `pnpm lint && pnpm typecheck && pnpm test` en verde (124 tests, 18
+nuevos: 10 unit en `tests/unit/content/frontmatter.test.ts`, 3 en
+`tests/unit/content/revisions.test.ts` y 5 de aceptación en
+`tests/acceptance/s10.test.ts` — programar un post a futuro no lo hace
+público y `publishDuePosts()` lo publica cuando la fecha ya pasó, cancelar
+una programación lo vuelve borrador sin `published_at`, un borrador tiene
+un link de vista previa que lo muestra con aviso y da 404 con el token de
+otro espacio o inexistente, rotar el link invalida el anterior, guardar el
+formulario completo registra una revisión sólo si `body_md` cambió, el
+autosave nunca genera una y el admin muestra el diff contra la anterior, e
+importar un lote de 20 archivos `.md` con categorías/tags —incluida una
+traducción con `translation_of`— más un ciclo completo exportar → borrar →
+reimportar dan el mismo contenido).
+
+`posts` gana `preview_token` (`uuid` único, sembrado desde que se crea) y
+tabla nueva `post_revisions` (migración `0004_cuddly_fallen_one.sql`, D17).
+`src/modules/content/scheduler.ts` (nuevo) trae `publishDuePosts`/
+`startScheduledPublishJob`, arrancado en `server.ts` después de que Fastify
+escucha y detenido en el hook `onClose`. `posts.ts` gana `schedulePost`/
+`cancelSchedule`, `findPostByPreviewToken`/`rotatePreviewToken` y
+`listAllPostsForExport`. Ruta pública nueva `GET /_preview/:token`
+(`previewRoutes` en `routes/public/space.ts`, fuera de las fábricas por
+idioma, registrada una sola vez en `routes/public/index.ts`), con
+`previewUrlFor` nuevo en `urls.ts`. `src/modules/content/revisions.ts`
+(nuevo) trae `recordRevisionIfChanged` (llamado sólo desde `POST
+/admin/posts/:id`, nunca desde `/autosave`), `listRevisions`/`getRevision`/
+`diffAgainstPrevious` (con `diff`, dependencia nueva, D17). `src/modules/content/frontmatter.ts`
+(nuevo, puro) y `src/modules/content/importExport.ts` (nuevo) orquestan
+`importSpaceFromDirectory`/`exportSpaceToDirectory`, expuestos por los
+scripts CLI `pnpm import`/`pnpm export` (`src/scripts/{import,export}.ts`).
+Admin: bloque de programar/cancelar y el link de vista previa con botón de
+rotar en `form.eta`, historial y diff nuevos (`revisions.eta`,
+`revision-diff.eta`), y `list.eta`/`form.eta` traducen por primera vez el
+`status` crudo a tres etiquetas.
+
+Ajustes que no estaban en el desglose original y aparecieron al
+implementar:
+
+- **`findPostByPreviewToken` no devuelve `PostDetail`, como sugería la
+  firma de T4.** `PostDetail` es la forma que usa el formulario de admin
+  (categorías por id, sin `bodyHtml` ni categoría/tags como objetos); la
+  vista previa reusa `post.eta`, que necesita `bodyHtml` ya cacheado,
+  categoría y tags como en `PublishedPostView`. Se agregó una interfaz
+  nueva, `PreviewPostView`, en vez de forzar el tipo del formulario a una
+  forma que no le sirve a esta vista.
+- **`previewUrlFor(request, subdomain, token)` recibe el subdominio como
+  `string`**, no un objeto "espacio" como sugería la prosa de T4: mismo
+  patrón que el resto de `urls.ts` (`spaceUrlFor`, `postAbsoluteUrlFor`).
+- **Una categoría de front-matter que no existe aborta toda la corrida de
+  `importSpaceFromDirectory`, no sólo el archivo que la referencia.**
+  `docs/slices/10.md` §0 decía "hace fallar el import de ese archivo";
+  tolerar archivos parciales habría requerido acumular errores por archivo
+  en el resumen (`ImportSummary`) en vez de lanzar, un modelo de resultado
+  que ningún otro módulo del proyecto usa. Se mantuvo el criterio general
+  del proyecto (lanzar, no continuar en silencio con un resultado
+  parcial): un nombre de categoría mal escrito frena el lote entero en vez
+  de crear 19 posts y avisar en un mensaje separado sobre el 20.
+- El aviso de vista previa ("Vista previa — no es la versión pública") en
+  `post.eta` quedó fijo en español, sin pasar por `src/i18n/dictionary.ts`:
+  es una vista de administración interna (quien tiene el link es el propio
+  autor), no contenido público bilingüe.
+
+**No se tocó el stack de producción de esta máquina** (mismo motivo que
+S3–S9: el puerto 3000 ya lo sirve `multiblog-prod-app-1`). Redeploy
+pendiente de que el usuario lo pida.
+
 ## Próxima
 
-**S10 — Flujo de escritura.** Sin código todavía. Borradores con vista
-previa en el subdominio real por URL secreta, publicación programada,
-histórico de `body_md` con diff, importador en lote de `.md` desde un
-directorio, exportador completo a `.md` con front-matter.
+Ninguna. `docs/PLAN.md` termina en S10; no hay una slice siguiente
+definida todavía.

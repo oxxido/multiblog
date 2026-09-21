@@ -1,5 +1,5 @@
 import { alias } from "drizzle-orm/pg-core";
-import { and, asc, count, desc, eq, gt, inArray, lt, ne } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, lt, ne, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { categories, postCategories, posts, postSlugs, postTags, spaces, tags } from "../../db/schema.js";
 import { renderMarkdown } from "../../markdown/pipeline.js";
@@ -13,6 +13,7 @@ export interface PostSummary {
   slug: string;
   title: string;
   status: "draft" | "scheduled" | "published";
+  publishedAt: Date | null;
   spaceName: string;
   updatedAt: Date;
   lang: "es" | "en";
@@ -30,6 +31,7 @@ export interface PostDetail {
   excerpt: string | null;
   bodyMd: string;
   status: "draft" | "scheduled" | "published";
+  publishedAt: Date | null;
   categoryIds: string[];
   tagNames: string[];
   coverMediaId: string | null;
@@ -38,6 +40,7 @@ export interface PostDetail {
   sourcePostId: string | null;
   sourceUpdatedAt: Date | null;
   updatedAt: Date;
+  previewToken: string;
 }
 
 export interface PostInput {
@@ -83,6 +86,7 @@ export async function listPosts(): Promise<PostSummary[]> {
       slug: posts.slug,
       title: posts.title,
       status: posts.status,
+      publishedAt: posts.publishedAt,
       spaceName: spaces.name,
       updatedAt: posts.updatedAt,
       lang: posts.lang,
@@ -100,6 +104,7 @@ export async function listPosts(): Promise<PostSummary[]> {
     slug: row.slug,
     title: row.title,
     status: row.status,
+    publishedAt: row.publishedAt,
     spaceName: row.spaceName,
     updatedAt: row.updatedAt,
     lang: row.lang,
@@ -117,12 +122,14 @@ export async function getPost(id: string): Promise<PostDetail | null> {
       excerpt: posts.excerpt,
       bodyMd: posts.bodyMd,
       status: posts.status,
+      publishedAt: posts.publishedAt,
       coverMediaId: posts.coverMediaId,
       lang: posts.lang,
       translationGroupId: posts.translationGroupId,
       sourcePostId: posts.sourcePostId,
       sourceUpdatedAt: posts.sourceUpdatedAt,
       updatedAt: posts.updatedAt,
+      previewToken: posts.previewToken,
     })
     .from(posts)
     .where(eq(posts.id, id))
@@ -224,6 +231,18 @@ export async function publishPost(id: string): Promise<void> {
     .update(posts)
     .set({ status: "published", publishedAt: new Date() })
     .where(eq(posts.id, id));
+}
+
+// "Publicar ya" (publishPost) y "programar" son acciones separadas
+// (docs/slices/10.md §0): programar deja status = "scheduled" y es
+// publishDuePosts (scheduler.ts), no este módulo, quien lo pasa a
+// "published" cuando llega la fecha.
+export async function schedulePost(id: string, publishAt: Date): Promise<void> {
+  await db.update(posts).set({ status: "scheduled", publishedAt: publishAt }).where(eq(posts.id, id));
+}
+
+export async function cancelSchedule(id: string): Promise<void> {
+  await db.update(posts).set({ status: "draft", publishedAt: null }).where(eq(posts.id, id));
 }
 
 export async function deletePost(id: string): Promise<void> {
@@ -360,6 +379,93 @@ export async function findPublishedPost(
     next: nextRow ?? null,
     coverMediaId: row.coverMediaId,
   };
+}
+
+export interface PreviewPostView {
+  id: string;
+  translationGroupId: string;
+  lang: "es" | "en";
+  status: "draft" | "scheduled" | "published";
+  title: string;
+  excerpt: string | null;
+  bodyHtml: string;
+  publishedAt: Date | null;
+  readingMinutes: number;
+  category: PostCategoryRef | null;
+  tags: PostTagRef[];
+  coverMediaId: string | null;
+}
+
+// Vista previa de un borrador (o de un post programado) por token, sin
+// filtrar por lang (el token ya identifica un post concreto con su propio
+// idioma, docs/slices/10.md §0). Filtra por spaceId además del token
+// (invariante 2), no porque el UUID sea adivinable.
+export async function findPostByPreviewToken(spaceId: string, token: string): Promise<PreviewPostView | null> {
+  const [row] = await db
+    .select({
+      id: posts.id,
+      translationGroupId: posts.translationGroupId,
+      lang: posts.lang,
+      status: posts.status,
+      title: posts.title,
+      excerpt: posts.excerpt,
+      bodyMd: posts.bodyMd,
+      bodyHtml: posts.bodyHtml,
+      publishedAt: posts.publishedAt,
+      coverMediaId: posts.coverMediaId,
+    })
+    .from(posts)
+    .where(and(eq(posts.spaceId, spaceId), eq(posts.previewToken, token)))
+    .limit(1);
+
+  if (!row) {
+    return null;
+  }
+
+  const [categoryRow] = await db
+    .select({ slug: categories.slug, name: categories.name })
+    .from(postCategories)
+    .innerJoin(categories, eq(postCategories.categoryId, categories.id))
+    .where(eq(postCategories.postId, row.id))
+    .limit(1);
+
+  const tagRows = await db
+    .select({ slug: tags.slug, name: tags.name })
+    .from(postTags)
+    .innerJoin(tags, eq(postTags.tagId, tags.id))
+    .where(eq(postTags.postId, row.id))
+    .limit(LIST_LIMIT);
+
+  return {
+    id: row.id,
+    translationGroupId: row.translationGroupId,
+    lang: row.lang,
+    status: row.status,
+    title: row.title,
+    excerpt: row.excerpt,
+    bodyHtml: row.bodyHtml,
+    publishedAt: row.publishedAt,
+    readingMinutes: computeReadingMinutes(row.bodyMd),
+    category: categoryRow ?? null,
+    tags: tagRows,
+    coverMediaId: row.coverMediaId,
+  };
+}
+
+// La única forma de invalidar un link de vista previa viejo (docs/slices/10.md
+// §0): sin expiración automática.
+export async function rotatePreviewToken(id: string): Promise<string> {
+  const [row] = await db
+    .update(posts)
+    .set({ previewToken: sql`gen_random_uuid()` })
+    .where(eq(posts.id, id))
+    .returning({ previewToken: posts.previewToken });
+
+  if (!row) {
+    throw new Error("Post no encontrado");
+  }
+
+  return row.previewToken;
 }
 
 export interface PublishedTranslationSibling {
@@ -658,4 +764,102 @@ export async function listPublishedSlugsForSitemap(spaceId: string, lang: "es" |
     .where(and(eq(posts.spaceId, spaceId), eq(posts.lang, lang), eq(posts.status, "published")))
     .orderBy(desc(posts.publishedAt), asc(posts.id))
     .limit(SITEMAP_POST_LIMIT);
+}
+
+export interface PostExportItem {
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  status: "draft" | "scheduled" | "published";
+  publishedAt: Date | null;
+  bodyMd: string;
+  categorySlugs: string[];
+  tagNames: string[];
+  translationOfSlug: string | null;
+}
+
+// Sin filtro de status, a diferencia de todo el resto del módulo (que sólo
+// expone publicado): es la herramienta de respaldo/portabilidad completa
+// (docs/slices/10.md §0), incluye borradores y programados.
+const EXPORT_POST_LIMIT = 2000;
+
+async function categorySlugsByPostId(postIds: string[]): Promise<Map<string, string[]>> {
+  if (postIds.length === 0) {
+    return new Map();
+  }
+
+  const rows = await db
+    .select({ postId: postCategories.postId, slug: categories.slug })
+    .from(postCategories)
+    .innerJoin(categories, eq(postCategories.categoryId, categories.id))
+    .where(inArray(postCategories.postId, postIds));
+
+  const byPostId = new Map<string, string[]>();
+  for (const row of rows) {
+    const list = byPostId.get(row.postId) ?? [];
+    list.push(row.slug);
+    byPostId.set(row.postId, list);
+  }
+  return byPostId;
+}
+
+async function tagNamesByPostId(postIds: string[]): Promise<Map<string, string[]>> {
+  if (postIds.length === 0) {
+    return new Map();
+  }
+
+  const rows = await db
+    .select({ postId: postTags.postId, name: tags.name })
+    .from(postTags)
+    .innerJoin(tags, eq(postTags.tagId, tags.id))
+    .where(inArray(postTags.postId, postIds));
+
+  const byPostId = new Map<string, string[]>();
+  for (const row of rows) {
+    const list = byPostId.get(row.postId) ?? [];
+    list.push(row.name);
+    byPostId.set(row.postId, list);
+  }
+  return byPostId;
+}
+
+export async function listAllPostsForExport(spaceId: string, lang: "es" | "en"): Promise<PostExportItem[]> {
+  const rows = await db
+    .select({
+      id: posts.id,
+      slug: posts.slug,
+      title: posts.title,
+      excerpt: posts.excerpt,
+      status: posts.status,
+      publishedAt: posts.publishedAt,
+      bodyMd: posts.bodyMd,
+      sourcePostId: posts.sourcePostId,
+    })
+    .from(posts)
+    .where(and(eq(posts.spaceId, spaceId), eq(posts.lang, lang)))
+    .limit(EXPORT_POST_LIMIT);
+
+  const postIds = rows.map((row) => row.id);
+  const [categoryMap, tagMap] = await Promise.all([categorySlugsByPostId(postIds), tagNamesByPostId(postIds)]);
+
+  const sourceIds = rows.map((row) => row.sourcePostId).filter((id): id is string => id !== null);
+  const sourceSlugById = new Map<string, string>();
+  if (sourceIds.length > 0) {
+    const sourceRows = await db.select({ id: posts.id, slug: posts.slug }).from(posts).where(inArray(posts.id, sourceIds));
+    for (const row of sourceRows) {
+      sourceSlugById.set(row.id, row.slug);
+    }
+  }
+
+  return rows.map((row) => ({
+    slug: row.slug,
+    title: row.title,
+    excerpt: row.excerpt,
+    status: row.status,
+    publishedAt: row.publishedAt,
+    bodyMd: row.bodyMd,
+    categorySlugs: categoryMap.get(row.id) ?? [],
+    tagNames: tagMap.get(row.id) ?? [],
+    translationOfSlug: row.sourcePostId ? (sourceSlugById.get(row.sourcePostId) ?? null) : null,
+  }));
 }

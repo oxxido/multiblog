@@ -37,7 +37,10 @@
             </td>
             <td><%= item.spaceName %></td>
             <td><%= item.lang %></td>
-            <td><%= item.status %></td>
+            <td>
+              <% if (item.status === "draft") { %> Borrador <% } else if (item.status === "scheduled") { %>
+              Programado para <%= item.publishedAt.toISOString() %> <% } else { %> Publicado <% } %>
+            </td>
             <td><%= item.updatedAt.toISOString() %></td>
           </tr>
           <% }) %>

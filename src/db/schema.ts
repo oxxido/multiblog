@@ -61,6 +61,10 @@ export const posts = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     coverMediaId: uuid("cover_media_id").references(() => media.id, { onDelete: "set null" }),
+    // Identifica el post en la URL de vista previa (S10, `/_preview/{token}`),
+    // sembrado desde que se crea igual que `id`. Rotar el link (admin) es la
+    // única forma de invalidar uno viejo: no expira solo.
+    previewToken: uuid("preview_token").notNull().defaultRandom().unique(),
   },
   (table) => [
     unique().on(table.spaceId, table.lang, table.slug),
@@ -138,6 +142,22 @@ export const postTags = pgTable(
       .references(() => tags.id, { onDelete: "cascade" }),
   },
   (table) => [primaryKey({ columns: [table.postId, table.tagId] })],
+);
+
+// Una fila por guardado explícito del formulario completo que cambió
+// body_md (nunca desde el autosave, docs/slices/10.md §0): el historial que
+// el admin compara contra la revisión inmediata anterior.
+export const postRevisions = pgTable(
+  "post_revisions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    postId: uuid("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    bodyMd: text("body_md").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("post_revisions_post_id_created_at_idx").on(table.postId, table.createdAt)],
 );
 
 export const users = pgTable("users", {
