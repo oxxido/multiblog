@@ -1,119 +1,150 @@
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title>Editar post · Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-  </head>
-  <body>
-    <header>
-      <a href="/admin/posts">← Posts</a>
-      <span>
-        Estado:
-        <% if (it.post.status === "draft") { %> Borrador <% } else if (it.post.status === "scheduled") { %>
-        Programado para <%= it.post.publishedAt.toISOString() %> <% } else { %> Publicado <% } %>
-      </span>
-      <span>Idioma: <%= it.post.lang %></span>
-    </header>
-    <main>
-      <p>
-        Vista previa: <a href="<%= it.previewUrl %>"><%= it.previewUrl %></a>
-        <form method="post" action="/admin/posts/<%= it.post.id %>/rotate-preview-token" style="display: inline">
-          <button type="submit">Rotar link</button>
-        </form>
-      </p>
-      <p><a href="/admin/posts/<%= it.post.id %>/revisions">Ver historial</a></p>
-      <% if (it.translateError) { %>
-      <p><%= it.translateError %></p>
-      <% } %> <% if (it.sibling) { %>
-      <p>
-        Hermano (<%= it.sibling.lang %>, <%= it.sibling.status %>):
-        <a href="/admin/posts/<%= it.sibling.id %>">ver</a>
-        <% if (it.siblingIsStale) { %> — traducción desactualizada, el original cambió después de traducirse <% } %>
-      </p>
-      <% } %>
-      <form method="post" action="<%= it.action %>" data-post-id="<%= it.post.id %>">
-        <label>
-          Espacio
-          <select name="spaceId" required>
-            <% it.spaceOptions.forEach(function(space) { %>
-            <option value="<%= space.id %>" <%= it.post.spaceId === space.id ? "selected" : "" %>>
-              <%= space.name %>
-            </option>
-            <% }) %>
-          </select>
-        </label>
-        <label>
-          Slug
-          <input type="text" name="slug" required value="<%= it.post.slug %>" />
-        </label>
-        <label>
-          Título
-          <input type="text" name="title" required value="<%= it.post.title %>" />
-        </label>
-        <label>
-          Extracto
-          <input type="text" name="excerpt" value="<%= it.post.excerpt ? it.post.excerpt : "" %>" />
-        </label>
-        <%~ include("../../partials/cover-field", { cover: it.cover, value: it.post.coverMediaId }) %>
-        <div>
-          <button type="button" data-editor-toggle>Ver Markdown</button>
-          <button type="button" data-insert-block="image">Imagen</button>
-          <button type="button" data-insert-block="callout">Callout</button>
-          <button type="button" data-insert-block="gallery">Galería</button>
-          <button type="button" data-insert-block="youtube">YouTube</button>
-        </div>
-        <div id="editor-visual" data-initial-doc="<%= JSON.stringify(it.initialDoc) %>"></div>
-        <label>
-          Markdown
-          <textarea name="bodyMd" rows="20" required><%= it.post.bodyMd %></textarea>
-        </label>
-        <fieldset>
-          <legend>Categorías</legend>
-          <% it.categoryOptions.forEach(function(category) { %>
-          <label>
-            <input
-              type="checkbox"
-              name="categoryIds"
-              value="<%= category.id %>"
-              <%= it.post.categoryIds.includes(category.id) ? "checked" : "" %>
-            />
-            <%= category.name %> (<%= category.spaceName %>)
-          </label>
-          <% }) %>
-        </fieldset>
-        <label>
-          Tags (separados por coma)
-          <input type="text" name="tags" value="<%= it.post.tagNames.join(", ") %>" />
-        </label>
-        <button type="submit">Guardar</button>
-      </form>
+<%~ include("../../partials/admin-head", { title: it.post.title, currentPath: it.currentPath, activeSpaces: it.activeSpaces }) %>
+<div class="editor-topbar" style="--space-accent: <%= it.space.accentColor || "#5980a6" %>">
+  <div class="cluster">
+    <a class="back" href="/admin/posts">← Posts</a>
+    <span class="divider">|</span>
+    <% if (it.post.status === "draft") { %>
+    <span class="badge badge-draft">Borrador</span>
+    <% } else if (it.post.status === "scheduled") { %>
+    <span class="badge badge-scheduled">Programado para <%= it.post.publishedAt.toISOString() %></span>
+    <% } else { %>
+    <span class="badge badge-published">Publicado</span>
+    <% } %>
+    <span class="text-muted">Idioma: <%= it.post.lang.toUpperCase() %></span>
+    <% if (it.sibling) { %>
+    <a class="btn-ghost" href="/admin/posts/<%= it.sibling.id %>">Ver post hermano (<%= it.sibling.lang.toUpperCase() %>)</a>
+    <% } %>
+  </div>
+  <div class="cluster">
+    <a class="btn-ghost" href="<%= it.previewUrl %>" target="_blank" rel="noopener">Vista previa</a>
+    <form method="post" action="/admin/posts/<%= it.post.id %>/rotate-preview-token">
+      <button class="btn btn-secondary" type="submit">Rotar token</button>
+    </form>
+    <a class="btn-ghost" href="/admin/posts/<%= it.post.id %>/revisions">Historial</a>
+  </div>
+</div>
 
+<% if (it.translateError) { %>
+<div class="banner banner-error"><span><%= it.translateError %></span></div>
+<% } %> <% if (it.sibling && it.siblingIsStale) { %>
+<div class="banner banner-warning">
+  <span><strong>Traducción desactualizada.</strong> El post en <%= it.post.lang.toUpperCase() %> cambió después de la última traducción.</span>
+  <a class="btn-ghost" href="/admin/posts/<%= it.post.id %>/revisions">Ver diferencias</a>
+</div>
+<% } %>
+
+<div class="editor-grid">
+  <div class="editor-main">
+    <form id="post-form" method="post" action="<%= it.action %>" data-post-id="<%= it.post.id %>">
+      <label class="field">
+        <span class="kicker">Espacio</span>
+        <select class="input" name="spaceId" required>
+          <% it.spaceOptions.forEach(function(space) { %>
+          <option value="<%= space.id %>" <%= it.post.spaceId === space.id ? "selected" : "" %>><%= space.name %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label class="field">
+        <span class="kicker">Slug</span>
+        <input class="input" type="text" name="slug" required value="<%= it.post.slug %>" />
+        <span class="field-help"><%= it.space.subdomain %>.<%= it.baseDomain %>/<%= it.post.slug %></span>
+      </label>
+      <label class="field">
+        <span class="kicker">Título</span>
+        <input class="input" type="text" name="title" required value="<%= it.post.title %>" />
+      </label>
+      <label class="field">
+        <span class="kicker">Extracto</span>
+        <textarea class="input" name="excerpt" rows="2"><%= it.post.excerpt ? it.post.excerpt : "" %></textarea>
+      </label>
+
+      <div class="editor-toolbar">
+        <button type="button" class="seg-toggle" data-editor-toggle data-mode="visual">
+          <span class="opt opt-visual">Visual</span><span class="opt opt-raw">Markdown</span>
+        </button>
+        <span class="divider">|</span>
+        <button type="button" class="insert-block" data-insert-block="image">Imagen</button>
+        <button type="button" class="insert-block" data-insert-block="callout">Callout</button>
+        <button type="button" class="insert-block" data-insert-block="gallery">Galería</button>
+        <button type="button" class="insert-block" data-insert-block="youtube">YouTube</button>
+      </div>
+      <div id="editor-visual" data-initial-doc="<%= JSON.stringify(it.initialDoc) %>"></div>
+      <label class="field">
+        <span class="kicker">Markdown</span>
+        <textarea name="bodyMd" class="input" rows="20" required><%= it.post.bodyMd %></textarea>
+        <span class="field-help">Sincronizado con el editor visual en cada cambio.</span>
+      </label>
+    </form>
+  </div>
+
+  <aside class="editor-sidebar">
+    <div class="card">
+      <span class="kicker">Publicación</span>
+      <button class="btn btn-primary btn-block" type="submit" form="post-form">Guardar</button>
+    </div>
+
+    <div class="card">
       <form method="post" action="/admin/posts/<%= it.post.id %>/publish">
-        <button type="submit">Publicar</button>
+        <button class="btn btn-secondary btn-block" type="submit">Publicar ahora</button>
       </form>
+      <hr class="hr" />
+      <span class="kicker">Programar</span>
       <form method="post" action="/admin/posts/<%= it.post.id %>/schedule">
-        <label>
-          Programar para
-          <input type="datetime-local" name="publishAt" required />
-        </label>
-        <button type="submit">Programar</button>
+        <input class="input" type="datetime-local" name="publishAt" required />
+        <div class="schedule-actions">
+          <button class="btn btn-secondary" type="submit">Programar</button>
+        </div>
       </form>
       <% if (it.post.status === "scheduled") { %>
-      <p>Programado para <%= it.post.publishedAt.toISOString() %></p>
+      <p class="field-help">Programado para <%= it.post.publishedAt.toISOString() %></p>
       <form method="post" action="/admin/posts/<%= it.post.id %>/cancel-schedule">
-        <button type="submit">Cancelar programación</button>
-      </form>
-      <% } %> <% if (it.post.lang === "es" && it.post.status === "published") { %>
-      <form method="post" action="/admin/posts/<%= it.post.id %>/translate">
-        <button type="submit">Traducir al inglés</button>
+        <button class="btn-ghost" type="submit">Cancelar programación</button>
       </form>
       <% } %>
-      <form method="post" action="/admin/posts/<%= it.post.id %>/delete">
-        <button type="submit">Borrar</button>
+    </div>
+
+    <div class="card">
+      <span class="kicker">Portada</span>
+      <%~ include("../../partials/cover-field", { cover: it.cover, value: it.post.coverMediaId, formId: "post-form" }) %>
+    </div>
+
+    <div class="card">
+      <span class="kicker">Categorías</span>
+      <div class="checklist">
+        <% it.categoryOptions.forEach(function(category) { %>
+        <label>
+          <input
+            type="checkbox"
+            name="categoryIds"
+            value="<%= category.id %>"
+            form="post-form"
+            <%= it.post.categoryIds.includes(category.id) ? "checked" : "" %>
+          />
+          <%= category.name %> <span class="text-muted">(<%= category.spaceName %>)</span>
+        </label>
+        <% }) %>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="kicker">Tags</span>
+      <input class="input" type="text" name="tags" form="post-form" value="<%= it.post.tagNames.join(", ") %>" />
+      <span class="field-help">Separados por coma. No hay gestión aparte.</span>
+    </div>
+
+    <% if (it.post.lang === "es" && it.post.status === "published") { %>
+    <div class="card">
+      <form method="post" action="/admin/posts/<%= it.post.id %>/translate">
+        <button class="btn btn-secondary btn-block" type="submit">Traducir al inglés</button>
       </form>
-    </main>
-    <script type="module" src="/admin/static/editor.js"></script>
-    <script type="module" src="/admin/static/coverPicker.js"></script>
-  </body>
-</html>
+    </div>
+    <% } %>
+
+    <div class="card">
+      <form method="post" action="/admin/posts/<%= it.post.id %>/delete">
+        <button class="btn-ghost" style="color: var(--color-error-text)" type="submit">Borrar post</button>
+      </form>
+    </div>
+  </aside>
+</div>
+<%~ include("../../partials/admin-foot", { scripts: ["/admin/static/editor.js", "/admin/static/coverPicker.js"] }) %>

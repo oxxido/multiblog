@@ -1,27 +1,15 @@
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title>Diff · <%= it.post.title %> · Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style>
-      ins { background: #d1fae5; text-decoration: none; }
-      del { background: #fee2e2; text-decoration: none; }
-      pre { white-space: pre-wrap; }
-    </style>
-  </head>
-  <body>
-    <header>
-      <a href="/admin/posts/<%= it.post.id %>/revisions">← Historial</a>
-      <span><%= it.revision.createdAt.toISOString() %></span>
-    </header>
-    <main>
-      <h1>Diff contra la revisión anterior</h1>
-      <% if (it.diffHtml === null) { %>
-      <p>Esta es la primera revisión guardada de este post: no hay una anterior contra la que compararla.</p>
-      <% } else { %>
-      <pre><%~ it.diffHtml %></pre>
-      <% } %>
-    </main>
-  </body>
-</html>
+<%~ include("../../partials/admin-head", { title: "Diff · " + it.post.title, currentPath: it.currentPath, activeSpaces: it.activeSpaces }) %>
+<a class="btn-ghost" href="/admin/posts/<%= it.post.id %>/revisions">← Historial</a>
+<div class="admin-page-header">
+  <div>
+    <h1>Diff contra la revisión anterior</h1>
+    <span class="subtitle"><%= it.revision.createdAt.toISOString() %></span>
+  </div>
+</div>
+<% if (it.diffHtml === null) { %>
+<p class="text-muted">Esta es la primera revisión guardada de este post: no hay una anterior contra la que compararla.</p>
+<% } else { %>
+<div class="diff"><pre><%~ it.diffHtml %></pre></div>
+<% } %>
+<%~ include("../../partials/admin-foot") %>
+

@@ -1,11 +1,19 @@
-<div data-cover-field>
-  <img
-    data-cover-preview
-    src="<%= it.cover ? it.cover.src : "" %>"
-    alt=""
-    width="200"
-    <%= it.cover ? "" : "hidden" %>
+<div data-cover-field class="cover-field">
+  <div class="cover-preview blueprint">
+    <i class="corner tl"></i>
+    <i class="corner tr"></i>
+    <i class="corner bl"></i>
+    <i class="corner br"></i>
+    <img data-cover-preview src="<%= it.cover ? it.cover.src : "" %>" alt="" <%= it.cover ? "" : "hidden" %> />
+  </div>
+  <input
+    type="hidden"
+    name="coverMediaId"
+    data-cover-input
+    value="<%= it.value ? it.value : "" %>"
+    <%= it.formId ? `form="${it.formId}"` : "" %>
   />
-  <input type="hidden" name="coverMediaId" data-cover-input value="<%= it.value ? it.value : "" %>" />
-  <button type="button" data-cover-picker>Elegir portada</button>
+  <div class="actions">
+    <button type="button" class="btn btn-secondary" data-cover-picker>Cambiar</button>
+  </div>
 </div>

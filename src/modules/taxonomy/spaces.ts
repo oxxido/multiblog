@@ -95,6 +95,22 @@ export async function listActiveSpaceOptions(): Promise<SpaceOption[]> {
     .limit(LIST_LIMIT);
 }
 
+export interface SpaceNavItem {
+  id: string;
+  name: string;
+  accentColor: string | null;
+}
+
+// Sidebar del admin (docs/slices/11.md T2): sólo espacios activos, mismo
+// límite que el resto de los listados del panel.
+export async function listActiveSpacesForNav(): Promise<SpaceNavItem[]> {
+  return db
+    .select({ id: spaces.id, name: spaces.name, accentColor: spaces.accentColor })
+    .from(spaces)
+    .where(isNull(spaces.archivedAt))
+    .limit(LIST_LIMIT);
+}
+
 // El formulario de edición de un post necesita poder mostrar el espacio
 // actual del post aunque haya sido archivado después de crearlo — si no
 // apareciera en el <select>, guardar el post sin tocarlo lo movería en

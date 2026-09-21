@@ -1,0 +1,7 @@
+      </main>
+    </div>
+    <% (it.scripts || []).forEach(function (src) { %>
+    <script type="module" src="<%= src %>"></script>
+    <% }) %>
+  </body>
+</html>

@@ -1,35 +1,34 @@
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title>Espacios · Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-  </head>
-  <body>
-    <header>
-      <h1>Espacios</h1>
-      <a href="/admin/posts">← Posts</a>
-      <a href="/admin/espacios/new">Nuevo espacio</a>
-    </header>
-    <main>
-      <table>
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Subdominio</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% it.items.forEach(function(item) { %>
-          <tr>
-            <td><a href="/admin/espacios/<%= item.id %>"><%= item.name %></a></td>
-            <td><%= item.subdomain %></td>
-            <td><%= item.archivedAt ? "archivado" : "activo" %></td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </main>
-  </body>
-</html>
+<%~ include("../../partials/admin-head", { title: "Espacios", currentPath: it.currentPath, activeSpaces: it.activeSpaces }) %>
+<div class="admin-page-header">
+  <div>
+    <h1>Espacios</h1>
+    <span class="subtitle">sin borrado, sólo archivado</span>
+  </div>
+  <a class="btn btn-primary" href="/admin/espacios/new">Nuevo espacio</a>
+</div>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Nombre</th>
+      <th>Subdominio</th>
+      <th>Estado</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% it.items.forEach(function(item) { %>
+    <tr>
+      <td><a href="/admin/espacios/<%= item.id %>"><%= item.name %></a></td>
+      <td><%= item.subdomain %></td>
+      <td>
+        <% if (item.archivedAt) { %>
+        <span class="badge badge-draft">Archivado</span>
+        <% } else { %>
+        <span class="badge badge-published">Activo</span>
+        <% } %>
+      </td>
+    </tr>
+    <% }) %>
+  </tbody>
+</table>
+<%~ include("../../partials/admin-foot") %>
+

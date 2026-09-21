@@ -1,0 +1,54 @@
+<% /* Cabecera + sidebar compartida del admin (docs/slices/11.md T3).
+   Parámetros: title (string), currentPath/activeSpaces (de reply.locals,
+   reenviados explícitos porque include() no hereda el `it` del padre). */ %>
+<% const path = it.currentPath || ""; %>
+<% const active = path.startsWith("/admin/categorias")
+  ? "categorias"
+  : path.startsWith("/admin/media")
+  ? "medios"
+  : path.startsWith("/admin/espacios")
+  ? "espacios"
+  : path.startsWith("/admin/sitio")
+  ? "sitio"
+  : "posts"; %>
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title><%= it.title %> · Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/admin.css" />
+  </head>
+  <body>
+    <div class="admin-shell">
+      <nav class="admin-sidebar">
+        <div class="admin-brand">
+          <span class="word">Multiblog</span>
+          <span class="sub">Admin</span>
+        </div>
+        <div class="admin-nav">
+          <a href="/admin/posts" class="<%= active === "posts" ? "is-active" : "" %>">Posts</a>
+          <a href="/admin/categorias" class="<%= active === "categorias" ? "is-active" : "" %>">Categorías</a>
+          <a href="/admin/media" class="<%= active === "medios" ? "is-active" : "" %>">Medios</a>
+          <a href="/admin/espacios" class="<%= active === "espacios" ? "is-active" : "" %>">Espacios</a>
+          <a href="/admin/sitio" class="<%= active === "sitio" ? "is-active" : "" %>">Sitio central</a>
+        </div>
+        <div class="admin-spaces">
+          <% (it.activeSpaces || []).forEach(function (space) { %>
+          <div class="item">
+            <span class="space-dot" style="--space-accent: <%= space.accentColor || "#5980a6" %>"></span>
+            <%= space.name %>
+          </div>
+          <% }) %>
+        </div>
+        <form class="admin-logout" method="post" action="/admin/logout">
+          <button type="submit">Salir</button>
+        </form>
+      </nav>
+      <main class="admin-main">

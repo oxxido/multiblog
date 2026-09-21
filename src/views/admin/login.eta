@@ -4,24 +4,47 @@
     <meta charset="utf-8" />
     <title>Ingresar · Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/admin.css" />
   </head>
   <body>
-    <main>
-      <h1>Ingresar</h1>
-      <% if (it.error) { %>
-      <p>Email o contraseña incorrectos.</p>
-      <% } %>
-      <form method="post" action="/admin/login">
-        <label>
-          Email
-          <input type="email" name="email" required autofocus />
-        </label>
-        <label>
-          Contraseña
-          <input type="password" name="password" required />
-        </label>
-        <button type="submit">Ingresar</button>
-      </form>
-    </main>
+    <div class="login-shell">
+      <div class="login-card blueprint">
+        <i class="corner tl"></i>
+        <i class="corner tr"></i>
+        <i class="corner bl"></i>
+        <i class="corner br"></i>
+        <div class="login-brand">
+          <span class="word">Multiblog</span>
+          <span class="sub">Panel de administración</span>
+        </div>
+        <% if (it.error) { %>
+        <div class="banner banner-error"><span>Email o contraseña incorrectos.</span></div>
+        <% } %>
+        <form method="post" action="/admin/login">
+          <label class="field">
+            <span class="kicker">Email</span>
+            <input class="input" type="email" name="email" required autofocus />
+          </label>
+          <label class="field">
+            <span class="kicker">Contraseña</span>
+            <input class="input" type="password" name="password" required />
+          </label>
+          <button class="btn btn-primary btn-block blueprint" type="submit">
+            <i class="corner tl"></i>
+            <i class="corner tr"></i>
+            <i class="corner bl"></i>
+            <i class="corner br"></i>
+            Entrar
+          </button>
+        </form>
+        <p class="login-footer">Un solo autor. Sin registro ni recuperación.</p>
+      </div>
+    </div>
   </body>
 </html>

@@ -15,6 +15,7 @@ export interface PostSummary {
   status: "draft" | "scheduled" | "published";
   publishedAt: Date | null;
   spaceName: string;
+  spaceAccentColor: string | null;
   updatedAt: Date;
   lang: "es" | "en";
   // Verdadero cuando el original de esta traducción se editó después de la
@@ -88,6 +89,7 @@ export async function listPosts(): Promise<PostSummary[]> {
       status: posts.status,
       publishedAt: posts.publishedAt,
       spaceName: spaces.name,
+      spaceAccentColor: spaces.accentColor,
       updatedAt: posts.updatedAt,
       lang: posts.lang,
       translatedAt: posts.translatedAt,
@@ -106,6 +108,7 @@ export async function listPosts(): Promise<PostSummary[]> {
     status: row.status,
     publishedAt: row.publishedAt,
     spaceName: row.spaceName,
+    spaceAccentColor: row.spaceAccentColor,
     updatedAt: row.updatedAt,
     lang: row.lang,
     isStale: row.translatedAt !== null && row.sourceUpdatedAt !== null && row.sourceUpdatedAt > row.translatedAt,

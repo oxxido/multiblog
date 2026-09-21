@@ -1,21 +1,16 @@
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title>Sitio · Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-  </head>
-  <body>
-    <header>
-      <a href="/admin/posts">← Posts</a>
-    </header>
-    <main>
-      <h1>Sitio</h1>
-      <form method="post" action="/admin/sitio">
-        <%~ include("../../partials/cover-field", { cover: it.cover, value: it.coverMediaId }) %>
-        <button type="submit">Guardar</button>
-      </form>
-    </main>
-    <script type="module" src="/admin/static/coverPicker.js"></script>
-  </body>
-</html>
+<%~ include("../../partials/admin-head", { title: "Sitio central", currentPath: it.currentPath, activeSpaces: it.activeSpaces }) %>
+<div class="admin-page-header">
+  <div>
+    <h1>Sitio central</h1>
+    <span class="subtitle"><%= it.baseDomain %> — portada</span>
+  </div>
+</div>
+<form method="post" action="/admin/sitio">
+  <div class="field">
+    <span class="kicker">Imagen de cabecera</span>
+    <%~ include("../../partials/cover-field", { cover: it.cover, value: it.coverMediaId }) %>
+  </div>
+  <button class="btn btn-primary" type="submit">Guardar portada</button>
+</form>
+<%~ include("../../partials/admin-foot", { scripts: ["/admin/static/coverPicker.js"] }) %>
+

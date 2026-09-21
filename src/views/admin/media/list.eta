@@ -1,36 +1,31 @@
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title>Media · Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-  </head>
-  <body>
-    <header>
-      <h1>Media</h1>
-      <a href="/admin/posts">Posts</a>
-      <a href="/admin/espacios">Espacios</a>
-      <a href="/admin/categorias">Categorías</a>
-    </header>
-    <main>
-      <form method="post" action="/admin/media" enctype="multipart/form-data">
-        <label>
-          Subir imagen (JPEG, PNG o WebP, máximo 15 MB)
-          <input type="file" name="file" accept="image/jpeg,image/png,image/webp" required />
-        </label>
-        <button type="submit">Subir</button>
-      </form>
+<%~ include("../../partials/admin-head", { title: "Medios", currentPath: it.currentPath, activeSpaces: it.activeSpaces }) %>
+<div class="admin-page-header">
+  <div>
+    <h1>Medios</h1>
+    <span class="subtitle"><%= it.items.length %> imágenes · máximo 15 MB por archivo</span>
+  </div>
+</div>
+<form class="field" method="post" action="/admin/media" enctype="multipart/form-data">
+  <label class="field">
+    <span class="kicker">Subir imagen (JPEG, PNG o WebP, máximo 15 MB)</span>
+    <input class="input" type="file" name="file" accept="image/jpeg,image/png,image/webp" required />
+  </label>
+  <button class="btn btn-primary" type="submit">Subir</button>
+</form>
 
-      <ul>
-        <% it.items.forEach(function(item) { %>
-        <li>
-          <img src="<%= item.thumbnail %>" alt="" width="160" />
-          <div><%= item.filename %></div>
-          <div><%= item.width %>×<%= item.height %> · <%= Math.round(item.size / 1024) %> KB</div>
-          <a href="/admin/media/<%= item.id %>/delete">Borrar</a>
-        </li>
-        <% }) %>
-      </ul>
-    </main>
-  </body>
-</html>
+<div class="picker-grid">
+  <% it.items.forEach(function(item) { %>
+  <div class="picker-item blueprint">
+    <i class="corner tl"></i>
+    <i class="corner tr"></i>
+    <i class="corner bl"></i>
+    <i class="corner br"></i>
+    <div class="thumb"><img src="<%= item.thumbnail %>" alt="" /></div>
+    <div class="filename"><%= item.filename %></div>
+    <div class="filename"><%= item.width %>×<%= item.height %> · <%= Math.round(item.size / 1024) %> KB</div>
+    <a class="btn-ghost" href="/admin/media/<%= item.id %>/delete">Borrar</a>
+  </div>
+  <% }) %>
+</div>
+<%~ include("../../partials/admin-foot") %>
+

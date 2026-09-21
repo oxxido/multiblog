@@ -1,38 +1,35 @@
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title>Nuevo post · Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-  </head>
-  <body>
-    <header>
-      <a href="/admin/posts">← Posts</a>
-    </header>
-    <main>
-      <form method="post" action="/admin/posts">
-        <label>
-          Espacio
-          <select name="spaceId" required>
-            <% it.spaceOptions.forEach(function(space) { %>
-            <option value="<%= space.id %>"><%= space.name %></option>
-            <% }) %>
-          </select>
-        </label>
-        <label>
-          Slug
-          <input type="text" name="slug" required />
-        </label>
-        <label>
-          Título
-          <input type="text" name="title" required />
-        </label>
-        <label>
-          Extracto
-          <input type="text" name="excerpt" />
-        </label>
-        <button type="submit">Crear y escribir</button>
-      </form>
-    </main>
-  </body>
-</html>
+<%~ include("../../partials/admin-head", { title: "Nuevo post", currentPath: it.currentPath, activeSpaces: it.activeSpaces }) %>
+<a class="btn-ghost" href="/admin/posts">← Posts</a>
+<div class="admin-page-header">
+  <div>
+    <h1>Nuevo post</h1>
+    <span class="subtitle">Alta rápida — el cuerpo se escribe en el editor</span>
+  </div>
+</div>
+<form method="post" action="/admin/posts">
+  <div class="field-row">
+    <label class="field">
+      <span class="kicker">Espacio</span>
+      <select class="input" name="spaceId" required>
+        <% it.spaceOptions.forEach(function(space) { %>
+        <option value="<%= space.id %>"><%= space.name %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label class="field">
+      <span class="kicker">Slug</span>
+      <input class="input" type="text" name="slug" placeholder="proteina-vegetal" required />
+    </label>
+    <label class="field">
+      <span class="kicker">Título</span>
+      <input class="input" type="text" name="title" placeholder="Título del post" required />
+    </label>
+  </div>
+  <label class="field">
+    <span class="kicker">Extracto</span>
+    <textarea class="input" name="excerpt" rows="2" placeholder="Dos líneas que resumen el post."></textarea>
+  </label>
+  <button class="btn btn-primary" type="submit">Crear y abrir editor</button>
+</form>
+<%~ include("../../partials/admin-foot") %>
+
