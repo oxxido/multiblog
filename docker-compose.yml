@@ -12,6 +12,7 @@ services:
       PORT: "3000"
       DATABASE_URL: postgres://${POSTGRES_USER:-multiblog}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-multiblog}
       MEDIA_DIR: /data/media
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
     volumes:
       - media_data:/data/media
 

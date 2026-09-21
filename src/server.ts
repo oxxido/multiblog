@@ -4,10 +4,12 @@ import { startScheduledPublishJob } from "./modules/content/scheduler.js";
 
 const app = await buildApp();
 
-await app.listen({ host: "0.0.0.0", port: env.PORT });
-
-const stopScheduledPublishJob = startScheduledPublishJob();
+const scheduler: { stop?: () => void } = {};
 app.addHook("onClose", (_instance, done) => {
-  stopScheduledPublishJob();
+  scheduler.stop?.();
   done();
 });
+
+await app.listen({ host: "0.0.0.0", port: env.PORT });
+
+scheduler.stop = startScheduledPublishJob();
