@@ -1,27 +1,18 @@
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title>Historial · <%= it.post.title %> · Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-  </head>
-  <body>
-    <header>
-      <a href="/admin/posts/<%= it.post.id %>">← <%= it.post.title %></a>
-    </header>
-    <main>
-      <h1>Historial de revisiones</h1>
-      <% if (it.revisions.length === 0) { %>
-      <p>Este post todavía no tiene ninguna revisión guardada.</p>
-      <% } %>
-      <ul>
-        <% it.revisions.forEach(function(revision) { %>
-        <li>
-          <%= revision.createdAt.toISOString() %>
-          — <a href="/admin/posts/<%= it.post.id %>/revisions/<%= revision.id %>/diff">Ver diff contra la anterior</a>
-        </li>
-        <% }) %>
-      </ul>
-    </main>
-  </body>
-</html>
+<%~ include("../../partials/admin-head", { title: "Historial · " + it.post.title, currentPath: it.currentPath, activeSpaces: it.activeSpaces }) %>
+<a class="btn-ghost" href="/admin/posts/<%= it.post.id %>">← <%= it.post.title %></a>
+<div class="admin-page-header">
+  <h1>Historial de revisiones</h1>
+</div>
+<% if (it.revisions.length === 0) { %>
+<p class="text-muted">Este post todavía no tiene ninguna revisión guardada.</p>
+<% } %>
+<ul class="revision-list">
+  <% it.revisions.forEach(function(revision) { %>
+  <li>
+    <span><%= revision.createdAt.toISOString() %></span>
+    <a class="btn-ghost" href="/admin/posts/<%= it.post.id %>/revisions/<%= revision.id %>/diff">Ver diff contra la anterior</a>
+  </li>
+  <% }) %>
+</ul>
+<%~ include("../../partials/admin-foot") %>
+

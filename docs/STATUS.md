@@ -510,7 +510,69 @@ implementar:
 S3–S9: el puerto 3000 ya lo sirve `multiblog-prod-app-1`). Redeploy
 pendiente de que el usuario lo pida.
 
+## Slice hecha (código), pendiente de redeploy
+
+**S11 — Diseño propio para el admin.** Implementada según
+`docs/slices/11.md` (T1–T10) en la rama `s11-diseno-admin`, validada contra
+el Postgres de dev y en un navegador real (Chromium vía Playwright: login,
+lista de posts con el alta rápida expandida, editor de post, categorías,
+medios, espacios y sitio central). `pnpm lint && pnpm typecheck && pnpm
+test` en verde (131 tests, 4 nuevos en `tests/acceptance/s11.test.ts`: las
+siete pantallas responden 200 autenticadas y cargan `admin.css`, el alta
+rápida crea un post por el mismo `POST /admin/posts` que ya probaba S5, el
+badge de borrador aparece en la lista, la nav marca activa la sección
+correspondiente).
+
+`public/css/admin.css` (nuevo) aplica al panel los mismos tokens que
+`docs/Design.md`/`site.css` (color, Barlow/Barlow Condensed, marcos
+`.blueprint`), en un archivo independiente de `site.css` (D18). Partials
+nuevos `src/views/partials/admin-head.eta`/`admin-foot.eta` (sidebar con
+nav activa calculada del path, lista de espacios activos, "Salir"),
+incluidos por las once plantillas del admin salvo `login.eta` (pantalla
+propia, sin sidebar) y `media/picker.eta` (ventana propia de S7, layout
+mínimo sin sidebar). `onRequest` nuevo en el scope protegido de
+`routes/admin/index.ts` llena `reply.locals` (que `@fastify/view` mezcla
+automáticamente con cada `reply.view()`) con `activeSpaces`, `currentPath` y
+`baseDomain`, para no tocar cada manejador de ruta sólo por el sidebar.
+`listActiveSpacesForNav` nueva en `taxonomy/spaces.ts`; `accentColor` sumado
+a `PostSummary`/`listPosts()` para el punto de color por espacio en la
+lista. La lista de posts gana un `<details>` de alta rápida (mismo
+`POST /admin/posts` que `posts/new.eta`, que sigue existiendo tal cual la
+prueba `tests/acceptance/s5.test.ts`). El editor de post reordena sus
+`<form>` existentes en dos columnas (categorías/tags/portada asociadas al
+formulario principal vía el atributo `form=`, sin anidar `<form>`); el
+alternador visual/Markdown de S5 pasa de reescribir `textContent` a
+resaltar por CSS según `data-mode` (`editor.ts`, único cambio de JS de esta
+slice).
+
+Ajustes que no estaban en el desglose original y aparecieron al
+implementar:
+
+- **El sidebar necesita `position: sticky` + `overflow-y: auto`, no sólo
+  `margin-top: auto`.** Detectado verificando en un navegador real con los
+  datos acumulados de tests anteriores (~150 espacios activos, ver nota de
+  limpieza pendiente más abajo): con `display: grid` en `.admin-shell`, el
+  sidebar se estira a la altura del contenido principal (miles de píxeles
+  con una tabla de 200 filas), así que "Salir" y la lista de espacios
+  quedaban empujados al final de esa altura entera, fuera de la pantalla.
+- **`.cover-preview img` usa `width/height: 100%` + `object-fit: cover`**,
+  no `max-height: 100%`: con una imagen de prueba más chica que el marco,
+  quedaba flotando centrada en vez de llenar el recuadro como portada.
+
+**No se tocó el stack de producción de esta máquina** (mismo motivo que
+S3–S10: el puerto 3000 ya lo sirve `multiblog-prod-app-1`). Redeploy
+pendiente de que el usuario lo pida.
+
+**Nota aparte, no de esta slice:** el Postgres de dev tiene ~150-200
+espacios de prueba acumulados de corridas anteriores de `pnpm test`
+(visible en el sidebar del admin y en `/admin/espacios` al verificar esta
+slice en un navegador) — el mismo problema que ya se había limpiado una vez
+en S9 (`docs/STATUS.md`, sección S9). Sigue sin haber limpieza automática
+entre corridas de test; una limpieza puntual (con confirmación del usuario,
+como en S9) o una rutina de test que borre lo que crea evitarían que vuelva
+a acumularse.
+
 ## Próxima
 
-Ninguna. `docs/PLAN.md` termina en S10; no hay una slice siguiente
+Ninguna. `docs/PLAN.md` termina en S11; no hay una slice siguiente
 definida todavía.

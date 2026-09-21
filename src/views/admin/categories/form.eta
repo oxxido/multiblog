@@ -1,48 +1,45 @@
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title><%= it.category ? "Editar categoría" : "Nueva categoría" %> · Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-  </head>
-  <body>
-    <header>
-      <a href="/admin/categorias">← Categorías</a>
-    </header>
-    <main>
-      <form method="post" action="<%= it.action %>">
-        <% if (it.category) { %>
-        <p>Espacio: <%= it.category.spaceName %></p>
-        <% } else { %>
-        <label>
-          Espacio
-          <select name="spaceId" required>
-            <% it.spaceOptions.forEach(function(space) { %>
-            <option value="<%= space.id %>"><%= space.name %></option>
-            <% }) %>
-          </select>
-        </label>
-        <% } %>
-        <label>
-          Slug
-          <input type="text" name="slug" required value="<%= it.category ? it.category.slug : "" %>" />
-        </label>
-        <label>
-          Nombre
-          <input type="text" name="name" required value="<%= it.category ? it.category.name : "" %>" />
-        </label>
-        <label>
-          Descripción
-          <input type="text" name="description" value="<%= it.category && it.category.description ? it.category.description : "" %>" />
-        </label>
-        <button type="submit">Guardar</button>
-      </form>
+<%~ include("../../partials/admin-head", { title: it.category ? "Editar categoría" : "Nueva categoría", currentPath: it.currentPath, activeSpaces: it.activeSpaces }) %>
+<a class="btn-ghost" href="/admin/categorias">← Categorías</a>
+<div class="admin-page-header">
+  <h1><%= it.category ? "Editar categoría" : "Nueva categoría" %></h1>
+</div>
+<form method="post" action="<%= it.action %>">
+  <% if (it.category) { %>
+  <p class="field-help">Espacio: <%= it.category.spaceName %></p>
+  <% } else { %>
+  <label class="field">
+    <span class="kicker">Espacio</span>
+    <select class="input" name="spaceId" required>
+      <% it.spaceOptions.forEach(function(space) { %>
+      <option value="<%= space.id %>"><%= space.name %></option>
+      <% }) %>
+    </select>
+  </label>
+  <% } %>
+  <label class="field">
+    <span class="kicker">Slug</span>
+    <input class="input" type="text" name="slug" required value="<%= it.category ? it.category.slug : "" %>" />
+  </label>
+  <label class="field">
+    <span class="kicker">Nombre</span>
+    <input class="input" type="text" name="name" required value="<%= it.category ? it.category.name : "" %>" />
+  </label>
+  <label class="field">
+    <span class="kicker">Descripción</span>
+    <input
+      class="input"
+      type="text"
+      name="description"
+      value="<%= it.category && it.category.description ? it.category.description : "" %>"
+    />
+  </label>
+  <button class="btn btn-primary" type="submit">Guardar</button>
+</form>
 
-      <% if (it.category) { %>
-      <form method="post" action="/admin/categorias/<%= it.category.id %>/delete">
-        <button type="submit">Borrar</button>
-      </form>
-      <% } %>
-    </main>
-  </body>
-</html>
+<% if (it.category) { %>
+<form method="post" action="/admin/categorias/<%= it.category.id %>/delete">
+  <button class="btn-ghost" style="color: var(--color-error-text)" type="submit">Borrar categoría</button>
+</form>
+<% } %>
+<%~ include("../../partials/admin-foot") %>
+

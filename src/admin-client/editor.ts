@@ -32,11 +32,13 @@ function toTiptapDoc(json: ReturnType<Editor["getJSON"]>): TiptapDoc {
   return JSON.parse(JSON.stringify(json)) as TiptapDoc;
 }
 
+// Las dos etiquetas ("Visual"/"Markdown") son marcado fijo del botón
+// (docs/slices/11.md T6, admin.css .seg-toggle); esta función sólo mueve el
+// resaltado cambiando data-mode, ya no reescribe textContent.
 function setMode(mode: Mode, elements: EditorElements): void {
   const isVisual = mode === "visual";
   elements.visual.hidden = !isVisual;
   elements.textarea.hidden = isVisual;
-  elements.toggle.textContent = isVisual ? "Ver Markdown" : "Ver editor visual";
   elements.toggle.dataset.mode = mode;
   for (const button of elements.insertButtons) {
     button.disabled = !isVisual;

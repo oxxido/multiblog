@@ -1,51 +1,82 @@
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title>Posts · Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-  </head>
-  <body>
-    <header>
-      <h1>Posts</h1>
-      <a href="/admin/posts/new">Nuevo post</a>
-      <a href="/admin/espacios">Espacios</a>
-      <a href="/admin/categorias">Categorías</a>
-      <a href="/admin/media">Media</a>
-      <a href="/admin/sitio">Sitio</a>
-      <form method="post" action="/admin/logout">
-        <button type="submit">Salir</button>
-      </form>
-    </header>
-    <main>
-      <table>
-        <thead>
-          <tr>
-            <th>Título</th>
-            <th>Espacio</th>
-            <th>Idioma</th>
-            <th>Estado</th>
-            <th>Actualizado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% it.items.forEach(function(item) { %>
-          <tr>
-            <td>
-              <a href="/admin/posts/<%= item.id %>"><%= item.title %></a>
-              <% if (item.isStale) { %> (traducción desactualizada) <% } %>
-            </td>
-            <td><%= item.spaceName %></td>
-            <td><%= item.lang %></td>
-            <td>
-              <% if (item.status === "draft") { %> Borrador <% } else if (item.status === "scheduled") { %>
-              Programado para <%= item.publishedAt.toISOString() %> <% } else { %> Publicado <% } %>
-            </td>
-            <td><%= item.updatedAt.toISOString() %></td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </main>
-  </body>
-</html>
+<%~ include("../../partials/admin-head", { title: "Posts", currentPath: it.currentPath, activeSpaces: it.activeSpaces }) %>
+<div class="admin-page-header">
+  <div>
+    <h1>Posts</h1>
+    <span class="subtitle">
+      <%= it.counts.total %> en total · <%= it.counts.drafts %> borradores · <%= it.counts.scheduled %> programados
+    </span>
+  </div>
+</div>
+
+<details class="quick-create">
+  <summary>Nuevo post</summary>
+  <div class="body">
+    <span class="kicker">Alta rápida</span>
+    <form method="post" action="/admin/posts">
+      <div class="field-row">
+        <label class="field">
+          <span class="kicker">Espacio</span>
+          <select class="input" name="spaceId" required>
+            <% it.spaceOptions.forEach(function(space) { %>
+            <option value="<%= space.id %>"><%= space.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label class="field">
+          <span class="kicker">Slug</span>
+          <input class="input" type="text" name="slug" placeholder="proteina-vegetal" required />
+        </label>
+        <label class="field">
+          <span class="kicker">Título</span>
+          <input class="input" type="text" name="title" placeholder="Título del post" required />
+        </label>
+      </div>
+      <label class="field">
+        <span class="kicker">Extracto</span>
+        <textarea class="input" name="excerpt" rows="2" placeholder="Dos líneas que resumen el post."></textarea>
+      </label>
+      <div class="actions">
+        <button class="btn btn-primary" type="submit">Crear y abrir editor</button>
+        <a class="btn-ghost" href="/admin/posts">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</details>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Título</th>
+      <th>Espacio</th>
+      <th>Idioma</th>
+      <th>Estado</th>
+      <th>Actualizado</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% it.items.forEach(function(item) { %>
+    <tr>
+      <td>
+        <a href="/admin/posts/<%= item.id %>"><%= item.title %></a>
+        <% if (item.isStale) { %><span class="text-muted"> (traducción desactualizada)</span><% } %>
+      </td>
+      <td>
+        <span class="space-dot" style="--space-accent: <%= item.spaceAccentColor || "#5980a6" %>"></span>
+        <%= item.spaceName %>
+      </td>
+      <td><%= item.lang.toUpperCase() %></td>
+      <td>
+        <% if (item.status === "draft") { %>
+        <span class="badge badge-draft">Borrador</span>
+        <% } else if (item.status === "scheduled") { %>
+        <span class="badge badge-scheduled">Programado</span>
+        <% } else { %>
+        <span class="badge badge-published">Publicado</span>
+        <% } %>
+      </td>
+      <td><%= item.updatedAt.toISOString() %></td>
+    </tr>
+    <% }) %>
+  </tbody>
+</table>
+<%~ include("../../partials/admin-foot") %>

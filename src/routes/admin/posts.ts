@@ -92,7 +92,13 @@ const postQuerySchema = z.object({ translateError: z.string().optional() });
 export default function postRoutes(fastify: FastifyInstance): void {
   fastify.get("/", async (_request, reply) => {
     const items = await listPosts();
-    await reply.view("admin/posts/list.eta", { items });
+    const counts = {
+      total: items.length,
+      drafts: items.filter((item) => item.status === "draft").length,
+      scheduled: items.filter((item) => item.status === "scheduled").length,
+    };
+    const spaceOptions = await listActiveSpaceOptions();
+    await reply.view("admin/posts/list.eta", { items, counts, spaceOptions });
   });
 
   fastify.get("/new", async (_request, reply) => {
@@ -136,6 +142,7 @@ export default function postRoutes(fastify: FastifyInstance): void {
 
     await reply.view("admin/posts/form.eta", {
       post,
+      space,
       spaceOptions,
       categoryOptions,
       cover,

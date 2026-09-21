@@ -1,49 +1,53 @@
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title><%= it.space ? "Editar espacio" : "Nuevo espacio" %> · Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-  </head>
-  <body>
-    <header>
-      <a href="/admin/espacios">← Espacios</a>
-      <% if (it.space && it.space.archivedAt) { %>
-      <span>Archivado</span>
-      <% } %>
-    </header>
-    <main>
-      <form method="post" action="<%= it.action %>">
-        <label>
-          Slug
-          <input type="text" name="slug" required value="<%= it.space ? it.space.slug : "" %>" />
-        </label>
-        <label>
-          Subdominio
-          <input type="text" name="subdomain" required value="<%= it.space ? it.space.subdomain : "" %>" />
-        </label>
-        <label>
-          Nombre
-          <input type="text" name="name" required value="<%= it.space ? it.space.name : "" %>" />
-        </label>
-        <label>
-          Descripción
-          <input type="text" name="description" value="<%= it.space && it.space.description ? it.space.description : "" %>" />
-        </label>
-        <label>
-          Color de acento
-          <input type="text" name="accentColor" value="<%= it.space && it.space.accentColor ? it.space.accentColor : "" %>" />
-        </label>
-        <%~ include("../../partials/cover-field", { cover: it.cover, value: it.space ? it.space.coverMediaId : null }) %>
-        <button type="submit">Guardar</button>
-      </form>
+<%~ include("../../partials/admin-head", { title: it.space ? "Editar espacio" : "Nuevo espacio", currentPath: it.currentPath, activeSpaces: it.activeSpaces }) %>
+<a class="btn-ghost" href="/admin/espacios">← Espacios</a>
+<div class="admin-page-header">
+  <h1><%= it.space ? "Editar espacio" : "Nuevo espacio" %></h1>
+  <% if (it.space && it.space.archivedAt) { %>
+  <span class="badge badge-draft">Archivado</span>
+  <% } %>
+</div>
+<form method="post" action="<%= it.action %>">
+  <label class="field">
+    <span class="kicker">Slug</span>
+    <input class="input" type="text" name="slug" required value="<%= it.space ? it.space.slug : "" %>" />
+  </label>
+  <label class="field">
+    <span class="kicker">Subdominio</span>
+    <input class="input" type="text" name="subdomain" required value="<%= it.space ? it.space.subdomain : "" %>" />
+  </label>
+  <label class="field">
+    <span class="kicker">Nombre</span>
+    <input class="input" type="text" name="name" required value="<%= it.space ? it.space.name : "" %>" />
+  </label>
+  <label class="field">
+    <span class="kicker">Descripción</span>
+    <input
+      class="input"
+      type="text"
+      name="description"
+      value="<%= it.space && it.space.description ? it.space.description : "" %>"
+    />
+  </label>
+  <label class="field">
+    <span class="kicker">Color de acento</span>
+    <input
+      class="input"
+      type="text"
+      name="accentColor"
+      value="<%= it.space && it.space.accentColor ? it.space.accentColor : "" %>"
+    />
+  </label>
+  <div class="field">
+    <span class="kicker">Portada</span>
+    <%~ include("../../partials/cover-field", { cover: it.cover, value: it.space ? it.space.coverMediaId : null }) %>
+  </div>
+  <button class="btn btn-primary" type="submit">Guardar</button>
+</form>
 
-      <% if (it.space && !it.space.archivedAt) { %>
-      <form method="post" action="/admin/espacios/<%= it.space.id %>/archive">
-        <button type="submit">Archivar</button>
-      </form>
-      <% } %>
-    </main>
-    <script type="module" src="/admin/static/coverPicker.js"></script>
-  </body>
-</html>
+<% if (it.space && !it.space.archivedAt) { %>
+<form method="post" action="/admin/espacios/<%= it.space.id %>/archive">
+  <button class="btn-ghost" type="submit">Archivar</button>
+</form>
+<% } %>
+<%~ include("../../partials/admin-foot", { scripts: ["/admin/static/coverPicker.js"] }) %>
+

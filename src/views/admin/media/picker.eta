@@ -4,37 +4,46 @@
     <meta charset="utf-8" />
     <title>Elegir imagen · Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/admin.css" />
   </head>
-  <body data-mode="<%= it.mode %>">
-    <header>
+  <body data-mode="<%= it.mode %>" style="padding: 24px">
+    <header class="admin-page-header">
       <h1><%= it.mode === "multi" ? "Elegir imágenes" : "Elegir una imagen" %></h1>
       <% if (it.mode === "multi") { %>
-      <button type="button" data-insert-selected>Insertar 0 imágenes</button>
+      <button class="btn btn-primary" type="button" data-insert-selected>Insertar 0 imágenes</button>
       <% } %>
     </header>
-    <main>
-      <ul>
-        <% it.items.forEach(function(item) { %>
-        <li
-          data-media-id="<%= item.id %>"
-          data-path="<%= item.path %>"
-          data-width="<%= item.width %>"
-          data-height="<%= item.height %>"
-          data-filename="<%= item.filename %>"
-        >
-          <% if (it.mode === "multi") { %>
-          <label>
-            <input type="checkbox" />
-            <img src="<%= item.thumbnail %>" alt="" width="160" />
-          </label>
-          <% } else { %>
-          <img src="<%= item.thumbnail %>" alt="" width="160" />
-          <% } %>
-          <div><%= item.filename %></div>
-        </li>
-        <% }) %>
-      </ul>
-    </main>
+    <p class="text-muted">Modo <%= it.mode === "multi" ? "múltiple" : "single" %> — un clic <%= it.mode === "multi" ? "selecciona" : "inserta" %>.</p>
+    <div class="picker-grid">
+      <% it.items.forEach(function(item) { %>
+      <div
+        class="picker-item blueprint"
+        data-media-id="<%= item.id %>"
+        data-path="<%= item.path %>"
+        data-width="<%= item.width %>"
+        data-height="<%= item.height %>"
+        data-filename="<%= item.filename %>"
+      >
+        <i class="corner tl"></i>
+        <i class="corner tr"></i>
+        <i class="corner bl"></i>
+        <i class="corner br"></i>
+        <% if (it.mode === "multi") { %>
+        <label>
+          <input type="checkbox" />
+          <div class="thumb"><img src="<%= item.thumbnail %>" alt="" /></div>
+        </label>
+        <% } else { %>
+        <div class="thumb"><img src="<%= item.thumbnail %>" alt="" /></div>
+        <% } %>
+        <div class="filename"><%= item.filename %></div>
+      </div>
+      <% }) %>
+    </div>
     <script type="module" src="/admin/static/picker.js"></script>
   </body>
 </html>
