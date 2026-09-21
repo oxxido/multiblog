@@ -208,6 +208,28 @@ Lo que hace que uses la herramienta en vez de tolerarla.
 
 ---
 
+## S11 — Diseño propio para el admin
+
+El panel sigue con el HTML funcional de S2/S3: sin estilo, sin nada del
+sistema visual que S4 le dio al sitio público. Esta slice le aplica ese
+mismo sistema (`docs/Design.md`, tokens de color y tipografía, marcos
+`.blueprint`) al admin, sobre el mockup aprobado
+`docs/UI_mockups/Divermente Admin.html`. Es visual, como S4: no cambia el
+modelo de datos, ninguna ruta deja de funcionar, ninguna funcionalidad de
+S2-S10 (autosave, bloques ricos, media, bilingüe, programación, revisiones,
+importar/exportar) se toca más que para acomodarla al layout nuevo.
+Desglose en `docs/slices/11.md`.
+
+**Aceptación**
+```
+✓ las siete pantallas del mockup (login, posts, editor, categorías, medios,
+  espacios, sitio central) usan el sistema visual nuevo
+✓ ninguna ruta ni funcionalidad existente se rompe
+✓ pnpm lint && pnpm typecheck && pnpm test en verde
+```
+
+---
+
 ## Reglas de ejecución
 
 **Sobre los agentes**
