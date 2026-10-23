@@ -2,9 +2,11 @@ services:
   app:
     build: .
     restart: unless-stopped
+    # El CMD de la imagen aplica migraciones y seed antes de levantar el
+    # servidor (D11), así que sólo necesita a Postgres listo.
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     ports:
       - "3000:3000"
     environment:
@@ -13,25 +15,10 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-multiblog}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-multiblog}
       MEDIA_DIR: /data/media
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-    volumes:
-      - media_data:/data/media
-
-  # Contenedor one-shot: aplica migraciones y siembra espacios/usuario antes
-  # de que `app` levante (spec §8). Usa la etapa `migrate` del Dockerfile,
-  # que sí trae drizzle-kit y tsx (devDependencies que `app` no necesita).
-  migrate:
-    build:
-      context: .
-      target: migrate
-    restart: "no"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      BASE_DOMAIN: localhost
-      DATABASE_URL: postgres://${POSTGRES_USER:-multiblog}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-multiblog}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    volumes:
+      - media_data:/data/media
 
   postgres:
     image: postgres:16-alpine

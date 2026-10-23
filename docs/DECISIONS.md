@@ -161,3 +161,23 @@ imperativo`). Al cerrar la slice, si hace falta subir la rama, se hace push
 y se le propone al usuario el link para abrir el pull request junto con un
 mensaje de PR sugerido; abrir el PR en sí (o mergear) es una decisión suya,
 no se hace automáticamente.
+
+### D11 — Migraciones y seed en el arranque de `app`, sin contenedor one-shot
+
+`SPEC.md` §8 pedía un contenedor one-shot con `drizzle-kit migrate` antes de
+levantar el app. Ese contenedor termina en `Exited (0)` tras cada despliegue
+y Dockge muestra el stack entero como finalizado aunque esté sano. Se
+reemplaza por el CMD de la imagen `runtime`: `node dist/db/migrate.js && node
+dist/db/seed.js && exec node dist/server.js`. Si una migración o el seed
+fallan, el servidor no arranca y `restart: unless-stopped` lo reintenta.
+
+`migrate.ts` usa el migrador de `drizzle-orm` (ya es dependencia de runtime)
+en vez de `drizzle-kit`, para que la imagen siga sin devDependencies. Ambos
+registran en la misma tabla `drizzle.__drizzle_migrations`, así que lo ya
+aplicado no se repite. `pnpm db:migrate` con `drizzle-kit` sigue igual en
+desarrollo.
+
+Consecuencia: el seed (idempotente) corre en cada arranque del contenedor,
+no sólo en cada `docker compose up`, así que la contraseña del admin y los
+posts `hola` de nutrición/ideas se reconcilian con `.env` y el código
+también tras un reinicio del host.

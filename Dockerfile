@@ -12,13 +12,6 @@ COPY src ./src
 COPY public ./public
 RUN pnpm build
 
-# Migraciones y seed necesitan drizzle-kit y tsx (devDependencies): usan
-# `deps`, no `prod-deps`. `app` en runtime no carga ninguna de las dos.
-FROM deps AS migrate
-COPY drizzle.config.ts ./
-COPY src ./src
-CMD ["sh", "-c", "pnpm exec drizzle-kit migrate && pnpm exec tsx src/db/seed.ts"]
-
 FROM base AS prod-deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --prod --frozen-lockfile
@@ -29,8 +22,12 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/public ./public
 COPY src/views ./src/views
+COPY src/db/migrations ./src/db/migrations
 COPY content ./content
 COPY package.json ./
 
 EXPOSE 3000
-CMD ["node", "dist/server.js"]
+# Migraciones y seed corren en el mismo contenedor antes del servidor (D11),
+# sin un contenedor one-shot que Dockge muestre como finalizado. `exec` deja
+# a node como PID 1, igual que antes, en vez de colgarlo de un `sh`.
+CMD ["sh", "-c", "node dist/db/migrate.js && node dist/db/seed.js && exec node dist/server.js"]

@@ -116,7 +116,7 @@ async function seed(): Promise<void> {
   // que reconciliar en cada corrida: coverMediaId lo edita el admin desde
   // /admin/sitio. onConflictDoUpdate con un `set` vacío tira ("No values to
   // set"), y poner coverMediaId: null ahí lo borraría en cada redeploy
-  // (docker-compose.yml corre este seed después de cada `migrate`). Sembrar
+  // (el CMD de la imagen corre este seed en cada arranque de `app`, D11). Sembrar
   // una sola vez, sin tocarla si ya existe, es lo correcto acá.
   await db.insert(siteSettings).values({ id: 1, coverMediaId: null }).onConflictDoNothing({ target: siteSettings.id });
 }
