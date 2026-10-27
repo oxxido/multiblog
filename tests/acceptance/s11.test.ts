@@ -164,7 +164,7 @@ test("el color de acento del espacio es un color picker y sólo acepta #rrggbb",
   await app.close();
 });
 
-test("la lista de espacios ofrece Editar y Archivar, y un espacio archivado sólo Editar", async () => {
+test("la lista de espacios ofrece Editar y Archivar, y un espacio archivado Editar y Desarchivar", async () => {
   const app = await buildApp();
   const cookie = await login(app);
   const space = await createSpace(app, cookie);
@@ -179,6 +179,13 @@ test("la lista de espacios ofrece Editar y Archivar, y un espacio archivado sól
   const after = await app.inject({ method: "GET", url: "/admin/espacios", headers: { cookie } });
   assert.match(after.body, new RegExp(`href="/admin/espacios/${space.id}">Editar<`));
   assert.doesNotMatch(after.body, new RegExp(`action="/admin/espacios/${space.id}/archive"`));
+  assert.match(after.body, new RegExp(`action="/admin/espacios/${space.id}/unarchive"`));
+
+  const restore = await app.inject({ method: "POST", url: `/admin/espacios/${space.id}/unarchive`, headers: { cookie } });
+  assert.equal(restore.statusCode, 302);
+  const restored = await app.inject({ method: "GET", url: "/admin/espacios", headers: { cookie } });
+  assert.match(restored.body, new RegExp(`action="/admin/espacios/${space.id}/archive"`));
+  assert.doesNotMatch(restored.body, new RegExp(`action="/admin/espacios/${space.id}/unarchive"`));
 
   await app.close();
 });

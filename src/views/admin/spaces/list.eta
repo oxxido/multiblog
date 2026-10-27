@@ -38,6 +38,10 @@
           >
             <button class="btn btn-danger btn-sm" type="submit">Archivar</button>
           </form>
+          <% } else { %>
+          <form method="post" action="/admin/espacios/<%= item.id %>/unarchive">
+            <button class="btn btn-secondary btn-sm" type="submit">Desarchivar</button>
+          </form>
           <% } %>
         </div>
       </td>

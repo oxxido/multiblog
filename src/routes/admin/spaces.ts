@@ -6,6 +6,7 @@ import {
   createSpace,
   getSpace,
   listSpaces,
+  unarchiveSpace,
   updateSpace,
 } from "../../modules/taxonomy/spaces.js";
 import { resolveCoverImage } from "../../modules/media/media.js";
@@ -101,6 +102,12 @@ export default function spaceRoutes(fastify: FastifyInstance): void {
   fastify.post<{ Params: { id: string } }>("/:id/archive", async (request, reply) => {
     const { id } = idParamSchema.parse(request.params);
     await archiveSpace(id);
+    return reply.redirect("/admin/espacios");
+  });
+
+  fastify.post<{ Params: { id: string } }>("/:id/unarchive", async (request, reply) => {
+    const { id } = idParamSchema.parse(request.params);
+    await unarchiveSpace(id);
     return reply.redirect("/admin/espacios");
   });
 }

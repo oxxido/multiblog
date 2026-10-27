@@ -48,6 +48,10 @@
 <form method="post" action="/admin/espacios/<%= it.space.id %>/archive">
   <button class="btn-ghost" type="submit">Archivar</button>
 </form>
+<% } else if (it.space) { %>
+<form method="post" action="/admin/espacios/<%= it.space.id %>/unarchive">
+  <button class="btn-ghost" type="submit">Desarchivar</button>
+</form>
 <% } %>
 <%~ include("../../partials/admin-foot", { scripts: ["/admin/static/coverPicker.js"] }) %>
 

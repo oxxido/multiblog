@@ -602,8 +602,9 @@ unas decenas de corridas conviene repetir la limpieza (o hacer que cada test
 borre lo suyo).
 
 **Lista de espacios:** gana columna de acciones con "Editar" y "Archivar"
-(con `confirm()`); un espacio archivado sólo muestra "Editar". No existe ruta
-para desarchivar: hoy archivar no se puede deshacer desde el admin.
+(con `confirm()`); un espacio archivado muestra "Editar" y "Desarchivar"
+(D21, `POST /admin/espacios/:id/unarchive`, también en la pantalla de
+edición). Desarchivar devuelve el subdominio con el contenido intacto.
 
 ## Próxima
 
