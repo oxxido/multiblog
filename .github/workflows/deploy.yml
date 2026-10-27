@@ -37,6 +37,12 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:migrate
+      - name: Sembrar espacios de prueba
+        run: pnpm db:seed
+        env:
+          BASE_DOMAIN: localhost
+          ADMIN_EMAIL: ci@example.com
+          ADMIN_PASSWORD: ci-sin-secreto
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
