@@ -28,6 +28,7 @@
 | D19 | Dominio definitivo: **`neurodivermente.com`**, registrado en name.com (que también hace de DNS) — reemplaza el tentativo `divermente.es` de D6. `BASE_DOMAIN` deja de estar fijo en `docker-compose.yml` (`${BASE_DOMAIN:-localhost}`) y se toma del `.env` del stack. DNS: registros A apex y `*` a la IP pública. **Sin certificado wildcard por ahora**: el módulo `caddy-dns/namedotcom` no compila con Caddy ≥ 2.8.4 (issue #4 del repo, sin mantenimiento), así que el Caddy del Pi lista cada host explícito (apex, `admin`, un nombre por espacio) y saca un certificado por host vía HTTP-01. Consecuencia temporal: un espacio nuevo requiere agregar su host al Caddyfile del Pi y recargar Caddy — no redeploy de Multiblog, y la resolución del espacio sigue siendo contra la base (invariante 7), pero sí un paso manual fuera de la app. Corrige D7 (que asumía un bloque wildcard con DNS-01). Se revisa cuando exista **DnsDynArr**, el sistema del usuario para controlar Caddy y puertos internos vía MCP. | — | D6, D3, D7 |
 | D20 | A pedido del usuario, **el picker de medios deja de ser una ventana propia** (`window.open`/`postMessage`, S7) y pasa a ser un panel dentro de la misma página: se abre debajo del campo de portada (post, espacio, sitio) o de la barra del editor (botones "Imagen" y "Galería"), con la grilla de la biblioteca y un botón **"Subir imagen"** que sube con `fetch` y, en modo único, elige la imagen en la misma acción (en modo múltiple la deja marcada). Revierte la parte de D18 que mantenía la ventana propia. Sin cambios de esquema: `GET /admin/media/items` (JSON) reemplaza a `/admin/media/picker`, y `POST /admin/media` responde la imagen creada en JSON cuando el cliente manda `Accept: application/json` (sin ese header sigue redirigiendo al listado). Se eliminan `picker.eta`, `picker.ts` y `mediaPicker.ts`; nuevo `src/admin-client/mediaPanel.ts`. Aparte, el **color de acento de un espacio** pasa de texto libre a `<input type="color">` y el servidor sólo acepta `#rrggbb` (o vacío) — el valor se interpola en `style="--sp: ..."` del sitio público, así que un texto libre permitía inyectar CSS. | S7, S11 | D18, `docs/slices/07.md` T4/T8/T9 |
 | D21 | A pedido del usuario, **los espacios archivados se pueden desarchivar** desde el admin (`POST /admin/espacios/:id/unarchive`, que pone `archived_at` en `null`), con botón "Desarchivar" en la lista y en la edición del espacio. Precisa que "sin borrado, sólo archivado" (S3) es una baja reversible: el espacio recupera su subdominio con todo su contenido intacto. Sin cambios de esquema. | S3, S11 | D18, `docs/slices/03.md` |
+| D22 | Producción se muda a un **VPS de IONOS** (Ubuntu 24.04, 2 vCPU / 4 GB / 120 GB NVMe), administrado con dockge en `/opt/stacks/<nombre>/`. Un **Caddy compartido** en su propio stack (`/opt/stacks/caddy`) termina el TLS de todos los proyectos del VPS y llega a cada app por la red Docker externa `proxy`. `app` deja de publicar `3000:3000` y se anuncia en esa red con el alias `multiblog-app`. Esta máquina queda sólo para desarrollo (`pnpm dev`, `compose.dev.yaml`). | — | D2, D7, D11 (puerto publicado), D12 (puerto de prod) |
 
 ---
 
@@ -184,3 +185,41 @@ Consecuencia: el seed (idempotente) corre en cada arranque del contenedor,
 no sólo en cada `docker compose up`, así que la contraseña del admin y los
 posts `hola` de nutrición/ideas se reconcilian con `.env` y el código
 también tras un reinicio del host.
+
+### D22 — Producción en un VPS de IONOS con Caddy compartido
+
+Se deja de usar esta máquina y el Pi como servidor y borde de producción
+(D2, D7) y se pasa a un VPS de IONOS que también alojará otros proyectos
+del usuario. Un solo Caddy, en su propio stack, es el dueño de los puertos
+80/443 y enruta por `Host` a cada proyecto; cada app se une a la red Docker
+externa `proxy` con un alias único (`multiblog-app`) para no chocar con otros
+servicios llamados `app`. `postgres` queda sólo en la red del stack, nunca en
+`proxy`.
+
+`app` ya no publica puerto al host: Docker salta las reglas de `ufw` para
+los puertos publicados, y el único camino legítimo de internet a la app pasa
+por Caddy. Esto reemplaza a D11 (`app` publica `3000:3000`) y a la
+asignación de puerto de prod de D12; el puerto de dev (`3100`) sigue igual.
+`D19` (dominio y estrategia de certificados) no cambia: el wildcard sigue
+bloqueado por el plugin `caddy-dns/namedotcom`, así que se lista cada host en
+el Caddyfile hasta resolverlo.
+
+Despliegue manual, en el VPS (`/opt/stacks/multiblog`, con el `.env` creado
+a mano y fuera de git):
+
+```bash
+docker network create proxy          # una sola vez
+git pull --ff-only origin master
+docker compose up -d --build         # migra y siembra al arrancar (D11)
+docker compose logs --tail=50 app
+```
+
+Al mergear a `master`, `.github/workflows/deploy.yml` corre lint, typecheck y
+tests contra un Postgres de servicio (puerto 5433, como en dev) y, si pasan,
+entra al VPS por SSH. La llave de ese deploy sólo puede ejecutar
+`scripts/deploy.sh` (`command=` en `authorized_keys`), que hace el `git pull`
+y el `docker compose up -d --build` de arriba y falla si `/health` no
+responde después. Los secretos (`VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`,
+`VPS_KNOWN_HOSTS`) viven en el environment `production` de GitHub, no en el
+repo. Quien puede mergear a `master` puede cambiar lo que corre en el VPS (el
+script y el `Dockerfile` vienen del repo): el control es proteger la rama.
