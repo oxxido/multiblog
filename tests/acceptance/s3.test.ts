@@ -8,10 +8,14 @@ process.env.DATABASE_URL ??= "postgres://multiblog:dev@localhost:5433/multiblog"
 
 const { buildApp } = await import("../../src/app.js");
 const { db, closeDb } = await import("../../src/db/client.js");
+const { deleteSpacesByPrefix } = await import("../helpers/cleanup.js");
 const { posts, users } = await import("../../src/db/schema.js");
 const { hashPassword } = await import("../../src/modules/auth/password.js");
 
-after(closeDb);
+after(async () => {
+  await deleteSpacesByPrefix(db, "espacio-s3-");
+  await closeDb();
+});
 
 const ADMIN_EMAIL = "s3-acceptance@example.com";
 const ADMIN_PASSWORD = "s3-acceptance-password";
@@ -207,6 +211,20 @@ test("archivar un espacio da 404 en su subdominio, con el contenido intacto en l
 
   const [row] = await db.select({ slug: posts.slug }).from(posts).where(eq(posts.slug, post.slug)).limit(1);
   assert.ok(row, "el post del espacio archivado sigue en la tabla posts");
+
+  const unarchiveResponse = await app.inject({
+    method: "POST",
+    url: `/admin/espacios/${space.id}/unarchive`,
+    headers: { cookie },
+  });
+  assert.equal(unarchiveResponse.statusCode, 302);
+
+  const afterUnarchive = await app.inject({
+    method: "GET",
+    url: "/",
+    headers: { host: `${space.subdomain}.localhost` },
+  });
+  assert.equal(afterUnarchive.statusCode, 200);
 
   await app.close();
 });

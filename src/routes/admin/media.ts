@@ -1,16 +1,42 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import multipart from "@fastify/multipart";
-import { deleteMedia, findMediaUsage, getMedia, listMedia, MediaValidationError, uploadMedia } from "../../modules/media/media.js";
+import {
+  deleteMedia,
+  findMediaUsage,
+  getMedia,
+  listMedia,
+  MediaValidationError,
+  uploadMedia,
+  type MediaSummary,
+} from "../../modules/media/media.js";
 import { buildThumbnail } from "../../modules/media/derivatives.js";
 
 const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 
 const idParamSchema = z.object({ id: z.uuid() });
-const pickerQuerySchema = z.object({ mode: z.enum(["single", "multi"]).default("single") });
 
 function toThumbnail(item: { id: string; width: number | null }): { thumbnail: string } {
   return { thumbnail: buildThumbnail(item.id, item.width) };
+}
+
+// Forma que consume el panel de selección del cliente (admin-client/mediaPanel.ts).
+function toPanelItem(item: MediaSummary): {
+  id: string;
+  path: string;
+  width: number;
+  height: number;
+  filename: string;
+  thumbnail: string;
+} {
+  return {
+    id: item.id,
+    path: item.path,
+    width: item.width ?? 0,
+    height: item.height ?? 0,
+    filename: item.filename,
+    thumbnail: buildThumbnail(item.id, item.width),
+  };
 }
 
 export default async function mediaRoutes(fastify: FastifyInstance): Promise<void> {
@@ -43,13 +69,25 @@ export default async function mediaRoutes(fastify: FastifyInstance): Promise<voi
       throw error;
     }
 
+    let uploaded: { id: string };
     try {
-      await uploadMedia(buffer, file.filename, file.mimetype);
+      uploaded = await uploadMedia(buffer, file.filename, file.mimetype);
     } catch (error) {
       if (error instanceof MediaValidationError) {
         return reply.code(400).send(error.message);
       }
       throw error;
+    }
+
+    // El panel de selección sube con fetch y necesita la imagen recién creada
+    // para elegirla en la misma acción; el formulario de /admin/media sigue
+    // redirigiendo al listado.
+    if (request.headers.accept?.includes("application/json")) {
+      const item = await getMedia(uploaded.id);
+      if (!item) {
+        throw new Error("La imagen subida no se encuentra");
+      }
+      return reply.send(toPanelItem(item));
     }
 
     return reply.redirect("/admin/media");
@@ -72,16 +110,11 @@ export default async function mediaRoutes(fastify: FastifyInstance): Promise<voi
     return reply.redirect("/admin/media");
   });
 
-  // Misma grilla del listado, servida en una ventana propia que el editor
-  // (T9) abre con window.open(): al elegir, postMessage a quien la abrió y
-  // se cierra sola (docs/slices/07.md §0). No hay POST acá — la selección
-  // nunca vuelve al servidor.
-  fastify.get("/picker", async (request, reply) => {
-    const { mode } = pickerQuerySchema.parse(request.query);
+  // Alimenta el panel de selección que se abre en la misma página (portadas y
+  // botones "Imagen"/"Galería" del editor); la selección nunca vuelve al
+  // servidor.
+  fastify.get("/items", async (_request, reply) => {
     const items = await listMedia();
-    await reply.view("admin/media/picker.eta", {
-      mode,
-      items: items.map((item) => ({ ...item, ...toThumbnail(item) })),
-    });
+    return reply.send(items.map(toPanelItem));
   });
 }

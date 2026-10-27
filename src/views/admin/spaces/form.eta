@@ -31,10 +31,10 @@
   <label class="field">
     <span class="kicker">Color de acento</span>
     <input
-      class="input"
-      type="text"
+      class="input input-color"
+      type="color"
       name="accentColor"
-      value="<%= it.space && it.space.accentColor ? it.space.accentColor : "" %>"
+      value="<%= it.space && it.space.accentColor ? it.space.accentColor : "#5980a6" %>"
     />
   </label>
   <div class="field">
@@ -47,6 +47,10 @@
 <% if (it.space && !it.space.archivedAt) { %>
 <form method="post" action="/admin/espacios/<%= it.space.id %>/archive">
   <button class="btn-ghost" type="submit">Archivar</button>
+</form>
+<% } else if (it.space) { %>
+<form method="post" action="/admin/espacios/<%= it.space.id %>/unarchive">
+  <button class="btn-ghost" type="submit">Desarchivar</button>
 </form>
 <% } %>
 <%~ include("../../partials/admin-foot", { scripts: ["/admin/static/coverPicker.js"] }) %>

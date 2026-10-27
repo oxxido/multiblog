@@ -16,4 +16,5 @@
   <div class="actions">
     <button type="button" class="btn btn-secondary" data-cover-picker>Cambiar</button>
   </div>
+  <div class="media-panel" data-cover-panel hidden></div>
 </div>

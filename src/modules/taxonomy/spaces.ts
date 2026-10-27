@@ -82,6 +82,10 @@ export async function archiveSpace(id: string): Promise<void> {
   await db.update(spaces).set({ archivedAt: new Date() }).where(eq(spaces.id, id));
 }
 
+export async function unarchiveSpace(id: string): Promise<void> {
+  await db.update(spaces).set({ archivedAt: null }).where(eq(spaces.id, id));
+}
+
 export interface SpaceOption {
   id: string;
   name: string;

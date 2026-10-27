@@ -12,6 +12,7 @@
       <th>Nombre</th>
       <th>Subdominio</th>
       <th>Estado</th>
+      <th><span class="sr-only">Acciones</span></th>
     </tr>
   </thead>
   <tbody>
@@ -25,6 +26,24 @@
         <% } else { %>
         <span class="badge badge-published">Activo</span>
         <% } %>
+      </td>
+      <td>
+        <div class="row-actions">
+          <a class="btn btn-secondary btn-sm" href="/admin/espacios/<%= item.id %>">Editar</a>
+          <% if (!item.archivedAt) { %>
+          <form
+            method="post"
+            action="/admin/espacios/<%= item.id %>/archive"
+            onsubmit="return confirm('¿Archivar este espacio? Deja de responder en su subdominio.')"
+          >
+            <button class="btn btn-danger btn-sm" type="submit">Archivar</button>
+          </form>
+          <% } else { %>
+          <form method="post" action="/admin/espacios/<%= item.id %>/unarchive">
+            <button class="btn btn-secondary btn-sm" type="submit">Desarchivar</button>
+          </form>
+          <% } %>
+        </div>
       </td>
     </tr>
     <% }) %>

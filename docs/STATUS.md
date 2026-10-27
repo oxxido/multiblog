@@ -572,6 +572,45 @@ entre corridas de test; una limpieza puntual (con confirmación del usuario,
 como en S9) o una rutina de test que borre lo que crea evitarían que vuelva
 a acumularse.
 
+## Ajuste posterior a S11: panel de medios en la misma página
+
+A pedido del usuario (D20): el picker de medios ya no abre una ventana. Las
+portadas (post, espacio, sitio) y los botones "Imagen"/"Galería" del editor
+abren un panel en la misma página, con un botón "Subir imagen" que sube y
+elige en la misma acción. `src/admin-client/mediaPanel.ts` (nuevo) reemplaza
+a `picker.ts`/`mediaPicker.ts`; `GET /admin/media/items` y la respuesta JSON
+de `POST /admin/media` reemplazan a `/admin/media/picker`. El color de acento
+del espacio es ahora un `<input type="color">` y se valida como `#rrggbb`.
+También se corrigió que `[hidden]` no ocultaba nada en `admin.css` (un `img {
+display: block }` global lo anulaba), lo que mostraba una imagen rota en la
+portada vacía.
+
+Verificado en navegador real (Chromium vía Playwright): abrir el panel en
+`/admin/sitio`, subir y quedar elegida, elegir una existente, insertar una
+galería desde el editor y el color picker de `/admin/espacios/new`.
+`pnpm lint && pnpm typecheck && pnpm test` en verde (132 tests).
+
+**Nota sobre `pnpm dev`:** el `esbuild --watch` del script no reconstruyó el
+bundle de `public/admin/` al reiniciar (quedó el viejo) — hizo falta correr
+esbuild una vez a mano. Conviene revisarlo antes de confiar en el watch.
+
+**Limpieza de la base de dev y de los tests:** los listados con `LIMIT` de 200
+hacían fallar `s4` y `s9` con ~470 espacios de prueba acumulados. Se borraron
+(a pedido del usuario) y, para que no vuelvan, los archivos de test que crean
+espacios (`s3`, `s4`, `s9`, `s10`, `s11` y `tests/unit/content/revisions`)
+los borran al terminar con `deleteSpacesByPrefix` (`tests/helpers/cleanup.ts`:
+vacía a mano `post_slugs`/`posts`/`categories` y borra por prefijo de slug,
+uno propio por archivo, seguro con los archivos corriendo en paralelo). Tras
+dos corridas completas la base queda en 2 espacios (`nutricion`, `ideas`).
+
+Lo que **no** se limpia: los posts que `s5`–`s8` crean dentro de `nutricion`/
+`ideas`, las filas `sample-*` de `media` que sube `s7` y los tags de `s9`.
+
+**Lista de espacios:** gana columna de acciones con "Editar" y "Archivar"
+(con `confirm()`); un espacio archivado muestra "Editar" y "Desarchivar"
+(D21, `POST /admin/espacios/:id/unarchive`, también en la pantalla de
+edición). Desarchivar devuelve el subdominio con el contenido intacto.
+
 ## Próxima
 
 Ninguna. `docs/PLAN.md` termina en S11; no hay una slice siguiente
