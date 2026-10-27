@@ -3,7 +3,7 @@
 <div class="admin-page-header">
   <div>
     <h1>Diff contra la revisión anterior</h1>
-    <span class="subtitle"><%= it.revision.createdAt.toISOString() %></span>
+    <span class="subtitle"><%= it.formatDateTime(it.revision.createdAt) %></span>
   </div>
 </div>
 <% if (it.diffHtml === null) { %>

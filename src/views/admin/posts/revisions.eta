@@ -9,7 +9,7 @@
 <ul class="revision-list">
   <% it.revisions.forEach(function(revision) { %>
   <li>
-    <span><%= revision.createdAt.toISOString() %></span>
+    <span><%= it.formatDateTime(revision.createdAt) %></span>
     <a class="btn-ghost" href="/admin/posts/<%= it.post.id %>/revisions/<%= revision.id %>/diff">Ver diff contra la anterior</a>
   </li>
   <% }) %>

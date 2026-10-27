@@ -11,6 +11,7 @@ import {
   publishPost,
   rotatePreviewToken,
   schedulePost,
+  unpublishPost,
   updatePost,
 } from "../../modules/content/posts.js";
 import { diffAgainstPrevious, getRevision, listRevisions, recordRevisionIfChanged } from "../../modules/content/revisions.js";
@@ -68,6 +69,15 @@ const editPostFormSchema = z.object({
 const autosaveBodySchema = z.object({ bodyMd: z.string() });
 
 const idParamSchema = z.object({ id: z.uuid() });
+
+// Los botones del listado reutilizan las acciones del editor pero vuelven al
+// listado; sólo se admite ese valor para que no sea un redirect abierto.
+const backFieldSchema = z.object({ back: z.literal("list").optional() });
+
+function afterActionPath(body: unknown, id: string): string {
+  const { back } = backFieldSchema.parse(body ?? {});
+  return back === "list" ? "/admin/posts" : `/admin/posts/${id}`;
+}
 
 const scheduleFormSchema = z.object({
   publishAt: z
@@ -199,7 +209,13 @@ export default function postRoutes(fastify: FastifyInstance): void {
   fastify.post<{ Params: { id: string } }>("/:id/publish", async (request, reply) => {
     const { id } = idParamSchema.parse(request.params);
     await publishPost(id);
-    return reply.redirect(`/admin/posts/${id}`);
+    return reply.redirect(afterActionPath(request.body, id));
+  });
+
+  fastify.post<{ Params: { id: string } }>("/:id/unpublish", async (request, reply) => {
+    const { id } = idParamSchema.parse(request.params);
+    await unpublishPost(id);
+    return reply.redirect(afterActionPath(request.body, id));
   });
 
   fastify.post<{ Params: { id: string } }>("/:id/schedule", async (request, reply) => {

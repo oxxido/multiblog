@@ -6,7 +6,7 @@
     <% if (it.post.status === "draft") { %>
     <span class="badge badge-draft">Borrador</span>
     <% } else if (it.post.status === "scheduled") { %>
-    <span class="badge badge-scheduled">Programado para <%= it.post.publishedAt.toISOString() %></span>
+    <span class="badge badge-scheduled">Programado para <%= it.formatDateTime(it.post.publishedAt) %></span>
     <% } else { %>
     <span class="badge badge-published">Publicado</span>
     <% } %>
@@ -88,6 +88,11 @@
       <form method="post" action="/admin/posts/<%= it.post.id %>/publish">
         <button class="btn btn-secondary btn-block" type="submit">Publicar ahora</button>
       </form>
+      <% if (it.post.status === "published") { %>
+      <form method="post" action="/admin/posts/<%= it.post.id %>/unpublish">
+        <button class="btn-ghost" type="submit">Despublicar</button>
+      </form>
+      <% } %>
       <hr class="hr" />
       <span class="kicker">Programar</span>
       <form method="post" action="/admin/posts/<%= it.post.id %>/schedule">
@@ -97,7 +102,7 @@
         </div>
       </form>
       <% if (it.post.status === "scheduled") { %>
-      <p class="field-help">Programado para <%= it.post.publishedAt.toISOString() %></p>
+      <p class="field-help">Programado para <%= it.formatDateTime(it.post.publishedAt) %></p>
       <form method="post" action="/admin/posts/<%= it.post.id %>/cancel-schedule">
         <button class="btn-ghost" type="submit">Cancelar programación</button>
       </form>

@@ -185,6 +185,38 @@ test("un post de un espacio nunca aparece en el índice de otro", async () => {
   await app.close();
 });
 
+test("despublicar desde el listado da 404 en el sitio y republicar lo devuelve", async () => {
+  const app = await buildApp();
+  const cookie = await login(app);
+  const space = await createSpace(app, cookie);
+  const post = await createPublishedPost(app, cookie, space.id);
+  const host = `${space.subdomain}.localhost`;
+
+  const unpublish = await app.inject({
+    method: "POST",
+    url: `/admin/posts/${post.id}/unpublish`,
+    ...form({ back: "list" }, cookie),
+  });
+  assert.equal(unpublish.statusCode, 302);
+  assert.equal(unpublish.headers.location, "/admin/posts");
+  const hidden = await app.inject({ method: "GET", url: `/${post.slug}`, headers: { host } });
+  assert.equal(hidden.statusCode, 404);
+
+  const republish = await app.inject({
+    method: "POST",
+    url: `/admin/posts/${post.id}/publish`,
+    ...form({ back: "list" }, cookie),
+  });
+  assert.equal(republish.headers.location, "/admin/posts");
+  const visible = await app.inject({ method: "GET", url: `/${post.slug}`, headers: { host } });
+  assert.equal(visible.statusCode, 200);
+
+  const list = await app.inject({ method: "GET", url: "/admin/posts", headers: { cookie } });
+  assert.doesNotMatch(list.body, /\d{4}-\d{2}-\d{2}T\d{2}:/);
+
+  await app.close();
+});
+
 test("archivar un espacio da 404 en su subdominio, con el contenido intacto en la base", async () => {
   const app = await buildApp();
   const cookie = await login(app);
