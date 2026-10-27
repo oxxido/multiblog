@@ -1,0 +1,67 @@
+name: deploy
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://multiblog:dev@localhost:5433/multiblog
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: multiblog
+          POSTGRES_USER: multiblog
+          POSTGRES_PASSWORD: dev
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U multiblog"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
+    steps:
+      - name: Deploy por SSH
+        env:
+          KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+          TARGET: ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}
+        run: |
+          install -m 600 /dev/null "$RUNNER_TEMP/key"
+          printf '%s\n' "$KEY" > "$RUNNER_TEMP/key"
+          printf '%s\n' "$KNOWN_HOSTS" > "$RUNNER_TEMP/known_hosts"
+          ssh -i "$RUNNER_TEMP/key" \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -o UserKnownHostsFile="$RUNNER_TEMP/known_hosts" \
+            -o StrictHostKeyChecking=yes \
+            "$TARGET"

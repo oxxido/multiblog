@@ -7,8 +7,13 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    ports:
-      - "3000:3000"
+    # Sin `ports`: el Caddy compartido del servidor llega por la red `proxy`
+    # (D22). Publicar al host saltaría las reglas de ufw.
+    networks:
+      default:
+      proxy:
+        aliases:
+          - multiblog-app
     environment:
       BASE_DOMAIN: ${BASE_DOMAIN:-localhost}
       PORT: "3000"
@@ -36,9 +41,9 @@ services:
       retries: 10
 
   # Opcional: sólo para pruebas locales completas contra *.localhost (D3).
-  # En producción el borde es el Caddy del Pi (D7), que llega acá por
-  # IP:puerto directo — este servicio no arranca salvo que se pida
-  # explícitamente con `docker compose --profile local-caddy up`.
+  # En producción el borde es el Caddy compartido del servidor (D22) — este
+  # servicio no arranca salvo que se pida explícitamente con
+  # `docker compose --profile local-caddy up`.
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -50,6 +55,12 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
+
+# Red compartida con el Caddy del servidor. Se crea una vez a mano:
+# `docker network create proxy` (también hace falta en local para `up`).
+networks:
+  proxy:
+    external: true
 
 volumes:
   caddy_data:
