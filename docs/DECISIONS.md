@@ -30,6 +30,7 @@
 | D21 | A pedido del usuario, **los espacios archivados se pueden desarchivar** desde el admin (`POST /admin/espacios/:id/unarchive`, que pone `archived_at` en `null`), con botón "Desarchivar" en la lista y en la edición del espacio. Precisa que "sin borrado, sólo archivado" (S3) es una baja reversible: el espacio recupera su subdominio con todo su contenido intacto. Sin cambios de esquema. | S3, S11 | D18, `docs/slices/03.md` |
 | D22 | Producción se muda a un **VPS de IONOS** (Ubuntu 24.04, 2 vCPU / 4 GB / 120 GB NVMe), administrado con dockge en `/opt/stacks/<nombre>/`. Un **Caddy compartido** en su propio stack (`/opt/stacks/caddy`) termina el TLS de todos los proyectos del VPS y llega a cada app por la red Docker externa `proxy`. `app` deja de publicar `3000:3000` y se anuncia en esa red con el alias `multiblog-app`. Esta máquina queda sólo para desarrollo (`pnpm dev`, `compose.dev.yaml`). | — | D2, D7, D11 (puerto publicado), D12 (puerto de prod) |
 | D23 | El certificado TLS de cada espacio nuevo se emite **en demanda** (on-demand TLS del Caddy compartido del VPS) en la primera petición HTTPS a su host, en vez de listar cada host en el Caddyfile. Crear un espacio ya no requiere editar ni recargar Caddy. Elimina la consecuencia temporal de D19 (paso manual por espacio); el wildcard DNS-01 sigue bloqueado y ya no hace falta para esto. | — | D19 (certificados por host), D22 |
+| D24 | A pedido del usuario, **las fotos de cabecera del espacio y del sitio central se muestran a color** (sin `--ph`); la panorámica del post sigue en blanco y negro. Además, el sitio central y el shell de espacio y de post son una **columna blanca (`--color-page`) sobre lienzo gris (`--color-canvas`, `#e4e4e6`)**, y el pie se empuja al fondo de la ventana (`min-height: 100vh`, no fijo) cuando hay poco contenido. | — | `Design.md` §1 (fotos B/N, "fondo papel en todas las páginas") |
 
 ---
 
@@ -239,3 +240,17 @@ la configuración de Caddy. El wildcard DNS-01 (bloqueado por
 
 La configuración vive en el Caddy compartido (`/opt/stacks/caddy`), fuera de
 este repo, no en el `Caddyfile` de Multiblog.
+
+### D24 — Foto de espacio a color, columna blanca y pie al fondo
+
+`Design.md` §1 manda blanco y negro para todas las fotos y papel `#f2f2f3`
+en todas las páginas. Tres ajustes, en el shell de espacio (home y post) y, después, en el sitio central:
+
+- Las cabeceras con foto del espacio y del sitio central ya no aplican
+  `--ph`; el degradado se mantiene para la legibilidad del texto. `--ph`
+  sigue vigente sólo en la panorámica del post.
+- El fondo de la página es el lienzo gris y la columna (`.space-shell` y
+  `.central`) es blanca; las páginas lo piden con `<body class="canvas-page">`.
+- `.space-shell` y `.central` ocupan al menos el alto de la ventana y el pie queda al fondo
+  con `margin-top: auto`; si el contenido es más largo, el pie sigue el flujo.
+  El canto de color se estira con la columna.

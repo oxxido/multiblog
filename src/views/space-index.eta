@@ -10,10 +10,10 @@
       ogImage: it.ogImage,
     }) %>
   </head>
-  <body>
+  <body class="canvas-page">
     <div class="space-shell">
       <div class="space-canto"></div>
-      <div>
+      <div class="space-main">
         <%~ include("partials/space-nav", { spaceName: it.spaceName, centralUrl: it.centralUrl, strings: it.strings, prefix: it.prefix }) %>
 
         <div class="space-hero<% if (it.cover) { %> has-cover<% } %>">

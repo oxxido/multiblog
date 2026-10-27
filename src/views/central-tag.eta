@@ -9,7 +9,7 @@
       ogImage: it.ogImage,
     }) %>
   </head>
-  <body>
+  <body class="canvas-page">
     <div class="central">
       <div class="central-hero<% if (it.cover) { %> has-cover<% } %>">
         <% if (it.cover) { %>

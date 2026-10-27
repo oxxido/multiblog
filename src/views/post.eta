@@ -11,7 +11,7 @@
       ogImage: it.ogImage,
     }) %>
   </head>
-  <body>
+  <body class="canvas-page">
     <% if (it.previewNotice) { %>
     <p style="background: #fef3c7; color: #78350f; padding: 0.75rem 1rem; margin: 0; text-align: center">
       Vista previa — no es la versión pública
@@ -19,7 +19,7 @@
     <% } %>
     <div class="space-shell">
       <div class="space-canto"></div>
-      <div>
+      <div class="space-main">
         <%~ include("partials/space-nav", { spaceName: it.spaceName, centralUrl: it.centralUrl, strings: it.strings, prefix: it.prefix }) %>
 
         <div class="post-panorama">
