@@ -11,6 +11,7 @@ process.env.DATABASE_URL ??= "postgres://multiblog:dev@localhost:5433/multiblog"
 
 const { buildApp } = await import("../../src/app.js");
 const { db, closeDb } = await import("../../src/db/client.js");
+const { deleteSpacesByPrefix } = await import("../helpers/cleanup.js");
 const { posts } = await import("../../src/db/schema.js");
 const { hashPassword } = await import("../../src/modules/auth/password.js");
 const { users } = await import("../../src/db/schema.js");
@@ -20,7 +21,10 @@ const { importSpaceFromDirectory, exportSpaceToDirectory } = await import("../..
 const { listAllPostsForExport } = await import("../../src/modules/content/posts.js");
 const { serializeFrontMatterFile } = await import("../../src/modules/content/frontmatter.js");
 
-after(closeDb);
+after(async () => {
+  await deleteSpacesByPrefix(db, "espacio-s10-");
+  await closeDb();
+});
 
 const ADMIN_EMAIL = "s10-acceptance@example.com";
 const ADMIN_PASSWORD = "s10-acceptance-password";

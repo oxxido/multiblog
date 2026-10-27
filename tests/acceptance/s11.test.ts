@@ -7,10 +7,14 @@ process.env.DATABASE_URL ??= "postgres://multiblog:dev@localhost:5433/multiblog"
 
 const { buildApp } = await import("../../src/app.js");
 const { db, closeDb } = await import("../../src/db/client.js");
+const { deleteSpacesByPrefix } = await import("../helpers/cleanup.js");
 const { hashPassword } = await import("../../src/modules/auth/password.js");
 const { users } = await import("../../src/db/schema.js");
 
-after(closeDb);
+after(async () => {
+  await deleteSpacesByPrefix(db, "espacio-s11");
+  await closeDb();
+});
 
 const ADMIN_EMAIL = "s11-acceptance@example.com";
 const ADMIN_PASSWORD = "s11-acceptance-password";

@@ -6,10 +6,14 @@ process.env.BASE_DOMAIN ??= "localhost";
 process.env.DATABASE_URL ??= "postgres://multiblog:dev@localhost:5433/multiblog";
 
 const { db, closeDb } = await import("../../../src/db/client.js");
+const { deleteSpacesByPrefix } = await import("../../helpers/cleanup.js");
 const { spaces, posts, postRevisions } = await import("../../../src/db/schema.js");
 const { diffAgainstPrevious } = await import("../../../src/modules/content/revisions.js");
 
-after(closeDb);
+after(async () => {
+  await deleteSpacesByPrefix(db, "espacio-rev-");
+  await closeDb();
+});
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
