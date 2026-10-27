@@ -11,6 +11,7 @@ import {
 import { resolveCoverImage } from "../../modules/media/media.js";
 
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 const SLUG_MESSAGE = "Sólo minúsculas, números y guiones";
 
 const coverMediaIdField = z.preprocess(
@@ -23,7 +24,12 @@ const spaceFormSchema = z.object({
   subdomain: z.string().min(1).regex(SLUG_PATTERN, SLUG_MESSAGE),
   name: z.string().min(1),
   description: z.string().trim().transform((value) => (value.length > 0 ? value : null)),
-  accentColor: z.string().trim().transform((value) => (value.length > 0 ? value : null)),
+  accentColor: z
+    .string()
+    .trim()
+    .regex(HEX_COLOR_PATTERN, "Color inválido (se espera #rrggbb)")
+    .or(z.literal(""))
+    .transform((value) => (value.length > 0 ? value : null)),
   coverMediaId: coverMediaIdField,
 });
 

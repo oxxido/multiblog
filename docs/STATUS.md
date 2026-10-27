@@ -572,6 +572,39 @@ entre corridas de test; una limpieza puntual (con confirmación del usuario,
 como en S9) o una rutina de test que borre lo que crea evitarían que vuelva
 a acumularse.
 
+## Ajuste posterior a S11: panel de medios en la misma página
+
+A pedido del usuario (D20): el picker de medios ya no abre una ventana. Las
+portadas (post, espacio, sitio) y los botones "Imagen"/"Galería" del editor
+abren un panel en la misma página, con un botón "Subir imagen" que sube y
+elige en la misma acción. `src/admin-client/mediaPanel.ts` (nuevo) reemplaza
+a `picker.ts`/`mediaPicker.ts`; `GET /admin/media/items` y la respuesta JSON
+de `POST /admin/media` reemplazan a `/admin/media/picker`. El color de acento
+del espacio es ahora un `<input type="color">` y se valida como `#rrggbb`.
+También se corrigió que `[hidden]` no ocultaba nada en `admin.css` (un `img {
+display: block }` global lo anulaba), lo que mostraba una imagen rota en la
+portada vacía.
+
+Verificado en navegador real (Chromium vía Playwright): abrir el panel en
+`/admin/sitio`, subir y quedar elegida, elegir una existente, insertar una
+galería desde el editor y el color picker de `/admin/espacios/new`.
+`pnpm lint && pnpm typecheck && pnpm test` en verde (132 tests).
+
+**Nota sobre `pnpm dev`:** el `esbuild --watch` del script no reconstruyó el
+bundle de `public/admin/` al reiniciar (quedó el viejo) — hizo falta correr
+esbuild una vez a mano. Conviene revisarlo antes de confiar en el watch.
+
+**Limpieza de la base de dev:** los listados con `LIMIT` de 200 hacían fallar
+`s4` y `s9` con ~470 espacios de prueba acumulados. Se borraron (a pedido del
+usuario) dejando 4 espacios: `nutricion`, `ideas` y dos de prueba. Los tests
+siguen sin borrar lo que crean, así que la acumulación va a volver: tras
+unas decenas de corridas conviene repetir la limpieza (o hacer que cada test
+borre lo suyo).
+
+**Lista de espacios:** gana columna de acciones con "Editar" y "Archivar"
+(con `confirm()`); un espacio archivado sólo muestra "Editar". No existe ruta
+para desarchivar: hoy archivar no se puede deshacer desde el admin.
+
 ## Próxima
 
 Ninguna. `docs/PLAN.md` termina en S11; no hay una slice siguiente

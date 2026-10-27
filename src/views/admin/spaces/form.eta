@@ -31,10 +31,10 @@
   <label class="field">
     <span class="kicker">Color de acento</span>
     <input
-      class="input"
-      type="text"
+      class="input input-color"
+      type="color"
       name="accentColor"
-      value="<%= it.space && it.space.accentColor ? it.space.accentColor : "" %>"
+      value="<%= it.space && it.space.accentColor ? it.space.accentColor : "#5980a6" %>"
     />
   </label>
   <div class="field">

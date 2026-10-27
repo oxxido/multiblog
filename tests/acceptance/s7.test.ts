@@ -261,3 +261,44 @@ test("borrar una imagen en uso avisa dónde se usa y no rompe el post al confirm
 
   await app.close();
 });
+
+test("subir con Accept: application/json devuelve la imagen creada y /admin/media/items la lista", async () => {
+  const app = await buildApp();
+  const cookie = await login(app);
+
+  const buffer = await readFile(FIXTURE_PATH);
+  const filename = `sample-${randomUUID().slice(0, 8)}.jpg`;
+  const upload = multipartUpload(buffer, filename, "image/jpeg", cookie);
+  const response = await app.inject({
+    method: "POST",
+    url: "/admin/media",
+    headers: { ...upload.headers, accept: "application/json" },
+    payload: upload.payload,
+  });
+  assert.equal(response.statusCode, 200, response.body);
+  const created = response.json<{ id: string; path: string; filename: string; width: number; thumbnail: string }>();
+  assert.equal(created.filename, filename);
+  assert.ok(created.width > 0);
+  assert.match(created.path, new RegExp(`^${created.id}\\.jpg$`));
+  assert.ok(created.thumbnail.length > 0);
+
+  const list = await app.inject({ method: "GET", url: "/admin/media/items", headers: { cookie } });
+  assert.equal(list.statusCode, 200);
+  const items = list.json<{ id: string }[]>();
+  assert.ok(items.some((item) => item.id === created.id), "la imagen subida debe estar en /items");
+
+  await app.close();
+});
+
+test("el picker en ventana propia ya no existe y /admin/media/items exige sesión", async () => {
+  const app = await buildApp();
+  const cookie = await login(app);
+
+  const popup = await app.inject({ method: "GET", url: "/admin/media/picker", headers: { cookie } });
+  assert.equal(popup.statusCode, 404);
+
+  const anonymous = await app.inject({ method: "GET", url: "/admin/media/items" });
+  assert.notEqual(anonymous.statusCode, 200);
+
+  await app.close();
+});

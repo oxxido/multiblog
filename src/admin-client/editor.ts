@@ -3,7 +3,7 @@ import { tiptapExtensions } from "../markdown/tiptap/extensions.js";
 import { fromMarkdown } from "../markdown/tiptap/fromMarkdown.js";
 import { toMarkdown } from "../markdown/tiptap/toMarkdown.js";
 import type { TiptapDoc } from "../markdown/tiptap/types.js";
-import { openMediaPicker } from "./mediaPicker.js";
+import { closeMediaPanel, openMediaPanel } from "./mediaPanel.js";
 
 type Mode = "visual" | "raw";
 
@@ -14,6 +14,7 @@ interface EditorElements {
   visual: HTMLElement;
   toggle: HTMLButtonElement;
   insertButtons: HTMLButtonElement[];
+  mediaPanel: HTMLElement;
 }
 
 function readInitialDoc(visual: HTMLElement): TiptapDoc {
@@ -42,6 +43,9 @@ function setMode(mode: Mode, elements: EditorElements): void {
   elements.toggle.dataset.mode = mode;
   for (const button of elements.insertButtons) {
     button.disabled = !isVisual;
+  }
+  if (!isVisual) {
+    closeMediaPanel(elements.mediaPanel);
   }
 }
 
@@ -109,11 +113,11 @@ function insertCallout(editor: Editor): void {
   });
 }
 
-// Botón "Imagen" (S7): picker en modo único, un sólo prompt() pide el alt
+// Botón "Imagen" (S7): panel en modo único, un sólo prompt() pide el alt
 // (accesibilidad) — el alt sigue siendo por uso, no por archivo (S6 §0), así
 // que no se guarda en `media`.
-function insertImage(editor: Editor): void {
-  openMediaPicker("single", (images) => {
+function insertImage(editor: Editor, mediaPanel: HTMLElement): void {
+  openMediaPanel(mediaPanel, "single", (images) => {
     const image = images[0];
     if (!image) {
       return;
@@ -126,12 +130,12 @@ function insertImage(editor: Editor): void {
   });
 }
 
-// Botón "Galería" (S7): ya no pide URLs por prompt(), abre el picker en
+// Botón "Galería" (S7): ya no pide URLs por prompt(), abre el panel en
 // modo múltiple. Las imágenes elegidas entran con alt: "" — decorativas por
 // defecto, el autor edita el alt a mano en crudo si quiere pie de foto
 // (S6 §0: alt vacío = sin figcaption).
-function insertGallery(editor: Editor): void {
-  openMediaPicker("multi", (images) => {
+function insertGallery(editor: Editor, mediaPanel: HTMLElement): void {
+  openMediaPanel(mediaPanel, "multi", (images) => {
     if (images.length === 0) {
       return;
     }
@@ -149,8 +153,8 @@ function insertYoutube(editor: Editor): void {
   insertBlockAtEnd(editor, { type: "youtube", attrs: { videoId, title: "Video de YouTube" } });
 }
 
-function mountToolbar(editor: Editor, buttons: HTMLButtonElement[]): void {
-  const inserters: Record<string, (editor: Editor) => void> = {
+function mountToolbar(editor: Editor, buttons: HTMLButtonElement[], mediaPanel: HTMLElement): void {
+  const inserters: Record<string, (editor: Editor, mediaPanel: HTMLElement) => void> = {
     image: insertImage,
     callout: insertCallout,
     gallery: insertGallery,
@@ -163,7 +167,7 @@ function mountToolbar(editor: Editor, buttons: HTMLButtonElement[]): void {
       continue;
     }
     button.addEventListener("click", () => {
-      insert(editor);
+      insert(editor, mediaPanel);
     });
   }
 }
@@ -176,10 +180,12 @@ function mountEditor(): void {
   const visual = document.getElementById("editor-visual");
   const toggle = document.querySelector<HTMLButtonElement>("[data-editor-toggle]");
   const insertButtons = [...document.querySelectorAll<HTMLButtonElement>("[data-insert-block]")];
+  const mediaPanel = document.querySelector<HTMLElement>("[data-editor-media-panel]");
   const postId = textarea?.form?.dataset.postId;
   if (
     !(textarea instanceof HTMLTextAreaElement) ||
     !visual ||
+    !mediaPanel ||
     !(toggle instanceof HTMLButtonElement) ||
     !textarea.form ||
     !postId
@@ -187,7 +193,7 @@ function mountEditor(): void {
     return;
   }
 
-  const elements: EditorElements = { textarea, visual, toggle, insertButtons };
+  const elements: EditorElements = { textarea, visual, toggle, insertButtons, mediaPanel };
 
   const editor = new Editor({
     element: visual,
@@ -195,7 +201,7 @@ function mountEditor(): void {
     content: readInitialDoc(visual),
   });
 
-  mountToolbar(editor, insertButtons);
+  mountToolbar(editor, insertButtons, mediaPanel);
   setMode("visual", elements);
 
   const autosave = scheduleAutosave(postId, () =>

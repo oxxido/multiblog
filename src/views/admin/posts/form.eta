@@ -68,6 +68,7 @@
         <button type="button" class="insert-block" data-insert-block="gallery">Galería</button>
         <button type="button" class="insert-block" data-insert-block="youtube">YouTube</button>
       </div>
+      <div class="media-panel" data-editor-media-panel hidden></div>
       <div id="editor-visual" data-initial-doc="<%= JSON.stringify(it.initialDoc) %>"></div>
       <label class="field">
         <span class="kicker">Markdown</span>

@@ -132,3 +132,53 @@ test("la nav marca activa la sección correspondiente en cada pantalla", async (
   const posts = await app.inject({ method: "GET", url: "/admin/posts", headers: { cookie } });
   assert.match(posts.body, /href="\/admin\/posts" class="is-active"/);
 });
+
+test("el color de acento del espacio es un color picker y sólo acepta #rrggbb", async () => {
+  const app = await buildApp();
+  const cookie = await login(app);
+
+  const newForm = await app.inject({ method: "GET", url: "/admin/espacios/new", headers: { cookie } });
+  assert.match(newForm.body, /type="color"[^>]*name="accentColor"|name="accentColor"[^>]*type="color"/s);
+
+  const suffix = randomUUID().slice(0, 8);
+  const fields = { slug: `espacio-s11c-${suffix}`, subdomain: `espacio-s11c-${suffix}`, name: `Espacio S11 ${suffix}`, description: "" };
+
+  const invalid = await app.inject({
+    method: "POST",
+    url: "/admin/espacios",
+    ...form({ ...fields, accentColor: "red; background:url(x)" }, cookie),
+  });
+  assert.equal(invalid.statusCode, 400);
+
+  const valid = await app.inject({
+    method: "POST",
+    url: "/admin/espacios",
+    ...form({ ...fields, accentColor: "#a1b2c3" }, cookie),
+  });
+  assert.equal(valid.statusCode, 302, valid.body);
+  const id = valid.headers.location?.toString().split("/").pop();
+  assert.ok(id);
+  const edit = await app.inject({ method: "GET", url: `/admin/espacios/${id}`, headers: { cookie } });
+  assert.match(edit.body, /value="#a1b2c3"/);
+
+  await app.close();
+});
+
+test("la lista de espacios ofrece Editar y Archivar, y un espacio archivado sólo Editar", async () => {
+  const app = await buildApp();
+  const cookie = await login(app);
+  const space = await createSpace(app, cookie);
+
+  const before = await app.inject({ method: "GET", url: "/admin/espacios", headers: { cookie } });
+  assert.match(before.body, new RegExp(`href="/admin/espacios/${space.id}">Editar<`));
+  assert.match(before.body, new RegExp(`action="/admin/espacios/${space.id}/archive"`));
+
+  const archive = await app.inject({ method: "POST", url: `/admin/espacios/${space.id}/archive`, headers: { cookie } });
+  assert.equal(archive.statusCode, 302);
+
+  const after = await app.inject({ method: "GET", url: "/admin/espacios", headers: { cookie } });
+  assert.match(after.body, new RegExp(`href="/admin/espacios/${space.id}">Editar<`));
+  assert.doesNotMatch(after.body, new RegExp(`action="/admin/espacios/${space.id}/archive"`));
+
+  await app.close();
+});
