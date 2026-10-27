@@ -611,6 +611,35 @@ Lo que **no** se limpia: los posts que `s5`–`s8` crean dentro de `nutricion`/
 (D21, `POST /admin/espacios/:id/unarchive`, también en la pantalla de
 edición). Desarchivar devuelve el subdominio con el contenido intacto.
 
+## Ajustes posteriores a S11: diseño público, categorías, posts y editor
+
+A pedido del usuario, sobre lo ya desplegado (D23, D24):
+
+- **TLS en demanda (D23):** el certificado de cada espacio nuevo se emite en
+  la primera petición HTTPS, en el Caddy compartido del VPS; crear un espacio
+  ya no toca Caddy.
+- **Diseño público (D24):** el sitio central y los espacios son una columna
+  blanca sobre lienzo gris (`<body class="canvas-page">`); las cabeceras con
+  foto van a color (sólo la panorámica del post sigue en B/N); el pie queda al
+  fondo de la ventana cuando hay poco contenido, sin ser fijo.
+- **Categorías:** crear una vuelve al listado, y el listado tiene "Editar" y
+  "Borrar" (con `confirm()`). Borrar una categoría no borra posts: caen sus
+  filas de `post_categories` por `ON DELETE CASCADE`.
+- **Posts:** el listado tiene "Editar", "Publicar"/"Despublicar" y "Borrar".
+  `POST /admin/posts/:id/unpublish` es nuevo (vuelve a borrador y limpia
+  `published_at`, así que republicar fija una fecha nueva); `publish` y
+  `unpublish` aceptan `back=list` para volver al listado. Las fechas del admin
+  salen como `27 oct 2026, 19:33` (`formatDateTime`), con la hora del servidor.
+- **Editor visual:** barra de formato con negrita, cursiva, código, enlace,
+  H2/H3, listas, cita y bloque de código. Sólo formatos con round-trip a
+  Markdown ya cubiertos por `tests/roundtrip/`.
+
+`pnpm lint && pnpm typecheck && pnpm test` en verde (133 tests). Sin probar en
+navegador real: la barra del editor y el nuevo fondo/columna.
+
+**Pendiente:** fijar `TZ` en el compose del VPS para que las fechas del admin
+salgan en hora local y no en UTC.
+
 ## Próxima
 
 Ninguna. `docs/PLAN.md` termina en S11; no hay una slice siguiente
