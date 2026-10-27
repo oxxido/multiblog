@@ -659,6 +659,15 @@ textarea.input:focus {
 .insert-block:disabled {
   opacity: 0.4;
 }
+.insert-block.is-active {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+.format-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
 
 #editor-visual {
   border: 1px solid var(--rule-weak);

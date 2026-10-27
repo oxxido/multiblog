@@ -14,6 +14,7 @@ interface EditorElements {
   visual: HTMLElement;
   toggle: HTMLButtonElement;
   insertButtons: HTMLButtonElement[];
+  formatButtons: HTMLButtonElement[];
   mediaPanel: HTMLElement;
 }
 
@@ -41,7 +42,7 @@ function setMode(mode: Mode, elements: EditorElements): void {
   elements.visual.hidden = !isVisual;
   elements.textarea.hidden = isVisual;
   elements.toggle.dataset.mode = mode;
-  for (const button of elements.insertButtons) {
+  for (const button of [...elements.insertButtons, ...elements.formatButtons]) {
     button.disabled = !isVisual;
   }
   if (!isVisual) {
@@ -153,6 +154,126 @@ function insertYoutube(editor: Editor): void {
   insertBlockAtEnd(editor, { type: "youtube", attrs: { videoId, title: "Video de YouTube" } });
 }
 
+// Sólo los formatos con ida y vuelta a Markdown (toMarkdown.ts): negrita,
+// cursiva, código, enlace, títulos 2 y 3 (el 1 es el título del post),
+// listas, cita y bloque de código.
+type FormatKind =
+  | "bold"
+  | "italic"
+  | "code"
+  | "link"
+  | "h2"
+  | "h3"
+  | "bulletList"
+  | "orderedList"
+  | "blockquote"
+  | "codeBlock";
+
+function isFormatKind(value: string | undefined): value is FormatKind {
+  return (
+    value === "bold" ||
+    value === "italic" ||
+    value === "code" ||
+    value === "link" ||
+    value === "h2" ||
+    value === "h3" ||
+    value === "bulletList" ||
+    value === "orderedList" ||
+    value === "blockquote" ||
+    value === "codeBlock"
+  );
+}
+
+function toggleLink(editor: Editor): void {
+  const previous = (editor.getAttributes("link").href as string | undefined) ?? "";
+  const url = window.prompt("URL del enlace (vacío para quitarlo):", previous);
+  if (url === null) {
+    return;
+  }
+  const chain = editor.chain().focus().extendMarkRange("link");
+  if (url.trim().length === 0) {
+    chain.unsetLink().run();
+    return;
+  }
+  chain.setLink({ href: url.trim() }).run();
+}
+
+function applyFormat(editor: Editor, kind: FormatKind): void {
+  const chain = editor.chain().focus();
+  switch (kind) {
+    case "bold":
+      chain.toggleBold().run();
+      return;
+    case "italic":
+      chain.toggleItalic().run();
+      return;
+    case "code":
+      chain.toggleCode().run();
+      return;
+    case "link":
+      toggleLink(editor);
+      return;
+    case "h2":
+      chain.toggleHeading({ level: 2 }).run();
+      return;
+    case "h3":
+      chain.toggleHeading({ level: 3 }).run();
+      return;
+    case "bulletList":
+      chain.toggleBulletList().run();
+      return;
+    case "orderedList":
+      chain.toggleOrderedList().run();
+      return;
+    case "blockquote":
+      chain.toggleBlockquote().run();
+      return;
+    case "codeBlock":
+      chain.toggleCodeBlock().run();
+      return;
+  }
+}
+
+function isFormatActive(editor: Editor, kind: FormatKind): boolean {
+  switch (kind) {
+    case "h2":
+      return editor.isActive("heading", { level: 2 });
+    case "h3":
+      return editor.isActive("heading", { level: 3 });
+    default:
+      return editor.isActive(kind);
+  }
+}
+
+function mountFormatToolbar(editor: Editor, buttons: HTMLButtonElement[]): void {
+  const kinds = new Map<HTMLButtonElement, FormatKind>();
+  for (const button of buttons) {
+    const kind = button.dataset.format;
+    if (isFormatKind(kind)) {
+      kinds.set(button, kind);
+    }
+  }
+
+  // mousedown con preventDefault: el botón no le quita el foco (ni la
+  // selección) al editor antes de que corra el comando.
+  for (const [button, kind] of kinds) {
+    button.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+    });
+    button.addEventListener("click", () => {
+      applyFormat(editor, kind);
+    });
+  }
+
+  const refresh = (): void => {
+    for (const [button, kind] of kinds) {
+      button.classList.toggle("is-active", isFormatActive(editor, kind));
+    }
+  };
+  editor.on("transaction", refresh);
+  refresh();
+}
+
 function mountToolbar(editor: Editor, buttons: HTMLButtonElement[], mediaPanel: HTMLElement): void {
   const inserters: Record<string, (editor: Editor, mediaPanel: HTMLElement) => void> = {
     image: insertImage,
@@ -180,6 +301,7 @@ function mountEditor(): void {
   const visual = document.getElementById("editor-visual");
   const toggle = document.querySelector<HTMLButtonElement>("[data-editor-toggle]");
   const insertButtons = [...document.querySelectorAll<HTMLButtonElement>("[data-insert-block]")];
+  const formatButtons = [...document.querySelectorAll<HTMLButtonElement>("[data-format]")];
   const mediaPanel = document.querySelector<HTMLElement>("[data-editor-media-panel]");
   const postId = textarea?.form?.dataset.postId;
   if (
@@ -193,7 +315,7 @@ function mountEditor(): void {
     return;
   }
 
-  const elements: EditorElements = { textarea, visual, toggle, insertButtons, mediaPanel };
+  const elements: EditorElements = { textarea, visual, toggle, insertButtons, formatButtons, mediaPanel };
 
   const editor = new Editor({
     element: visual,
@@ -202,6 +324,7 @@ function mountEditor(): void {
   });
 
   mountToolbar(editor, insertButtons, mediaPanel);
+  mountFormatToolbar(editor, formatButtons);
   setMode("visual", elements);
 
   const autosave = scheduleAutosave(postId, () =>
