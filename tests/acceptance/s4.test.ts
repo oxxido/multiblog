@@ -1,6 +1,7 @@
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { and, eq } from "drizzle-orm";
 
 process.env.BASE_DOMAIN ??= "localhost";
 process.env.DATABASE_URL ??= "postgres://multiblog:dev@localhost:5433/multiblog";
@@ -8,7 +9,7 @@ process.env.DATABASE_URL ??= "postgres://multiblog:dev@localhost:5433/multiblog"
 const { buildApp } = await import("../../src/app.js");
 const { db, closeDb } = await import("../../src/db/client.js");
 const { deleteSpacesByPrefix } = await import("../helpers/cleanup.js");
-const { users, tags, postTags } = await import("../../src/db/schema.js");
+const { categories, users, tags, postTags } = await import("../../src/db/schema.js");
 const { hashPassword } = await import("../../src/modules/auth/password.js");
 
 after(async () => {
@@ -140,9 +141,13 @@ async function createCategory(app: App, cookie: string, spaceId: string, slug: s
     ...form({ spaceId, slug, name: slug, description: "" }, cookie),
   });
   assert.equal(response.statusCode, 302, response.body);
-  const id = response.headers.location?.toString().split("/").pop();
-  assert.ok(id);
-  return { id };
+  assert.equal(response.headers.location, "/admin/categorias");
+  const [row] = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(and(eq(categories.spaceId, spaceId), eq(categories.slug, slug)));
+  assert.ok(row);
+  return { id: row.id };
 }
 
 async function tagPost(postId: string, slug: string, name: string): Promise<void> {
