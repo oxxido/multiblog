@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { getHeroTexts, setHeroTexts } from "../../modules/content/siteSettings.js";
 import { getSiteCoverMediaId, resolveCoverImage, setSiteCoverMediaId } from "../../modules/media/media.js";
 
 const coverMediaIdField = z.preprocess(
@@ -7,15 +8,33 @@ const coverMediaIdField = z.preprocess(
   z.uuid().nullable(),
 );
 
-const siteFormSchema = z.object({ coverMediaId: coverMediaIdField });
+// Los textarea mandan \r\n; vacío = volver al texto por defecto del diccionario.
+const heroText = (max: number) =>
+  z.preprocess(
+    (value) => {
+      if (typeof value !== "string") return null;
+      const text = value.replace(/\r\n/g, "\n").trim();
+      return text.length > 0 ? text : null;
+    },
+    z.string().max(max).nullable(),
+  );
+
+const siteFormSchema = z.object({
+  coverMediaId: coverMediaIdField,
+  headlineEs: heroText(120),
+  headlineEn: heroText(120),
+  leadEs: heroText(400),
+  leadEn: heroText(400),
+});
 
 // Fila única, sembrada por seed.ts (D15): no hay alta ni borrado, sólo
-// lectura y actualización de su cover_media_id.
+// lectura y actualización de su portada y de los textos del héroe (D26).
 export default function siteRoutes(fastify: FastifyInstance): void {
   fastify.get("/", async (_request, reply) => {
     const coverMediaId = await getSiteCoverMediaId();
     const cover = await resolveCoverImage(coverMediaId);
-    await reply.view("admin/site/form.eta", { coverMediaId, cover });
+    const hero = await getHeroTexts();
+    await reply.view("admin/site/form.eta", { coverMediaId, cover, hero });
   });
 
   fastify.post("/", async (request, reply) => {
@@ -24,7 +43,9 @@ export default function siteRoutes(fastify: FastifyInstance): void {
       return reply.code(400).send(parsed.error.message);
     }
 
-    await setSiteCoverMediaId(parsed.data.coverMediaId);
+    const { coverMediaId, ...hero } = parsed.data;
+    await setSiteCoverMediaId(coverMediaId);
+    await setHeroTexts(hero);
     return reply.redirect("/admin/sitio");
   });
 }

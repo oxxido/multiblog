@@ -33,9 +33,9 @@
           </div>
         </div>
         <div>
-          <h1><%~ it.strings.centralHeadline %></h1>
-          <% if (it.spaceNames) { %>
-          <p class="central-hero__lead"><%= it.spaceNames %>. <%= it.strings.centralLeadSuffix %></p>
+          <h1><%= it.headline %></h1>
+          <% if (it.lead) { %>
+          <p class="central-hero__lead"><%= it.lead %></p>
           <% } %>
         </div>
       </div>

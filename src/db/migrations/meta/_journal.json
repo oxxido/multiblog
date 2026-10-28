@@ -36,6 +36,20 @@
       "when": 1789927751096,
       "tag": "0004_cuddly_fallen_one",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793187147890,
+      "tag": "0005_nice_viper",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793187162036,
+      "tag": "0006_harsh_morg",
+      "breakpoints": true
     }
   ]
 }

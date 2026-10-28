@@ -223,6 +223,7 @@ html:has(.canvas-page) {
   text-decoration: none;
 }
 .central-hero h1 {
+  white-space: pre-line;
   font-size: 66px;
   line-height: 1.02;
   max-width: 15ch;
@@ -634,10 +635,77 @@ html:has(.canvas-page) {
   color: color-mix(in srgb, var(--color-text) 78%, transparent);
 }
 
-.post-body {
+.post-bodywrap {
+  position: relative;
   width: 100%;
   max-width: 640px;
   margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Riel pegajoso a la izquierda del cuerpo, a la altura donde empieza el
+   texto; en pantallas angostas no hay margen lateral y pasa a ser una fila
+   debajo del cuerpo. */
+.post-share {
+  order: 2;
+  margin-top: 36px;
+}
+.post-share__inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-heading);
+}
+.post-share__label {
+  margin-right: 4px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+.post-share__link {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--sp-line);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--sp-deep);
+}
+.post-share__link:hover,
+.post-share__link:focus-visible {
+  background: var(--sp);
+  border-color: var(--sp);
+  color: var(--color-page);
+}
+@media (min-width: 920px) {
+  .post-share {
+    order: 0;
+    margin-top: 0;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -64px;
+    width: 34px;
+  }
+  .post-share__inner {
+    position: sticky;
+    top: 24px;
+    flex-direction: column;
+  }
+  .post-share__label {
+    margin: 0 0 4px;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+}
+
+.post-body {
+  width: 100%;
+  max-width: 640px;
   font-family: var(--font-serif);
   font-size: 19px;
   line-height: 1.7;

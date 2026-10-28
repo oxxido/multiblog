@@ -5,6 +5,9 @@ export interface Dictionary {
   backToAll: string;
   categoriesLink: string;
   readingMinutesSuffix: string;
+  shareLabel: string;
+  shareOn: string;
+  shareByEmail: string;
   paginationPrev: string;
   paginationOf: string;
   rssOfSpace: string;
@@ -28,6 +31,9 @@ export const dictionary: Record<Lang, Dictionary> = {
     backToAll: "← todo",
     categoriesLink: "Categorías",
     readingMinutesSuffix: "min",
+    shareLabel: "Compartir",
+    shareOn: "Compartir en",
+    shareByEmail: "Enviar por email",
     paginationPrev: "Posts anteriores",
     paginationOf: "de",
     rssOfSpace: "RSS del espacio",
@@ -41,7 +47,7 @@ export const dictionary: Record<Lang, Dictionary> = {
     rssAggregatedLabel: "RSS agregado",
     archiveLabel: "Archivo",
     allCategoryLabel: "Todo",
-    centralHeadline: "Un solo sitio,<br />varios espacios.",
+    centralHeadline: "Un solo sitio,\nvarios espacios.",
     centralLeadSuffix: "Cada uno vive en su propio subdominio y escribe a su ritmo; acá se ven todos juntos.",
   },
   en: {
@@ -49,6 +55,9 @@ export const dictionary: Record<Lang, Dictionary> = {
     backToAll: "← all",
     categoriesLink: "Categories",
     readingMinutesSuffix: "min",
+    shareLabel: "Share",
+    shareOn: "Share on",
+    shareByEmail: "Share by email",
     paginationPrev: "Previous posts",
     paginationOf: "of",
     rssOfSpace: "Space RSS",
@@ -62,7 +71,7 @@ export const dictionary: Record<Lang, Dictionary> = {
     rssAggregatedLabel: "Aggregated RSS",
     archiveLabel: "Archive",
     allCategoryLabel: "All",
-    centralHeadline: "One site,<br />many spaces.",
+    centralHeadline: "One site,\nmany spaces.",
     centralLeadSuffix: "Each one lives on its own subdomain and writes at its own pace; here they all show up together.",
   },
 };

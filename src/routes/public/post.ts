@@ -9,6 +9,7 @@ import { env } from "../../config/env.js";
 import { stringsFor } from "../../i18n/dictionary.js";
 import { formatDateLong } from "../../i18n/dates.js";
 import { absoluteMediaUrl, centralUrlFor, postAbsoluteUrlFor } from "./urls.js";
+import { shareLinksFor } from "./share.js";
 
 const DEFAULT_ACCENT = "#5980a6";
 
@@ -67,6 +68,7 @@ export default function postRoutes(lang: "es" | "en") {
         prefix,
         canonical,
         alternates,
+        shareLinks: shareLinksFor(canonical, post.title, strings),
         postUrl: `${subdomain}${prefix}/${slug}`,
         heading: post.title,
         lead: post.excerpt,

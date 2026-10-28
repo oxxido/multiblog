@@ -9,6 +9,7 @@
       ogTitle: it.ogTitle,
       ogDescription: it.ogDescription,
       ogImage: it.ogImage,
+      siteName: it.spaceName,
     }) %>
   </head>
   <body class="canvas-page">
@@ -52,7 +53,27 @@
             <% } %>
           </div>
 
-          <div class="post-body"><%~ it.html %></div>
+          <div class="post-bodywrap">
+            <% if (it.shareLinks) { %>
+            <nav class="post-share" aria-label="<%= it.strings.shareLabel %>">
+              <div class="post-share__inner">
+              <span class="post-share__label"><%= it.strings.shareLabel %></span>
+              <% it.shareLinks.forEach(function(link) { %>
+              <a
+                class="post-share__link"
+                href="<%= link.href %>"
+                title="<%= link.label %>"
+                aria-label="<%= link.label %>"
+                target="_blank"
+                rel="noopener noreferrer"
+                ><%= link.glyph %></a
+              >
+              <% }) %>
+              </div>
+            </nav>
+            <% } %>
+            <div class="post-body"><%~ it.html %></div>
+          </div>
 
           <% if (it.tags.length > 0) { %>
           <div class="post-tags">
