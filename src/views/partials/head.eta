@@ -16,9 +16,14 @@
 <meta property="og:type" content="<%= it.ogType %>" />
 <meta property="og:title" content="<%= it.ogTitle %>" />
 <% if (it.ogDescription) { %>
+<meta name="description" content="<%= it.ogDescription %>" />
 <meta property="og:description" content="<%= it.ogDescription %>" />
+<% } %> <% if (it.siteName) { %>
+<meta property="og:site_name" content="<%= it.siteName %>" />
 <% } %> <% if (it.canonical) { %>
 <meta property="og:url" content="<%= it.canonical %>" />
 <% } %> <% if (it.ogImage) { %>
 <meta property="og:image" content="<%= it.ogImage %>" />
-<% } %> <% } %>
+<% } %>
+<meta name="twitter:card" content="<%= it.ogImage ? 'summary_large_image' : 'summary' %>" />
+<% } %>

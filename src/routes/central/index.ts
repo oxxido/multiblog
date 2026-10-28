@@ -6,6 +6,7 @@ import {
   listPostsByTagAcrossSpaces,
   listTagsAcrossSpaces,
 } from "../../modules/content/central.js";
+import { getHeroTexts } from "../../modules/content/siteSettings.js";
 import { resolveSiteCoverImage } from "../../modules/media/media.js";
 import { env } from "../../config/env.js";
 import { stringsFor } from "../../i18n/dictionary.js";
@@ -20,17 +21,22 @@ export async function renderCentralHome(request: FastifyRequest, reply: FastifyR
   const prefix = lang === "en" ? "/en" : "";
   const strings = stringsFor(lang);
 
-  const [spacesList, latest, crossTags, cover] = await Promise.all([
+  const [spacesList, latest, crossTags, cover, heroTexts] = await Promise.all([
     listActiveSpacesWithPostCounts(lang),
     listLatestAcrossSpaces(lang, LATEST_LIMIT),
     listTagsAcrossSpaces(lang, TAGS_LIMIT),
     resolveSiteCoverImage(),
+    getHeroTexts(),
   ]);
 
   const totalPublished = spacesList.reduce((sum, space) => sum + space.publishedCount, 0);
   const spaceNames = new Intl.ListFormat(lang === "en" ? "en" : "es", { style: "long", type: "conjunction" }).format(
     spacesList.map((space) => space.name),
   );
+
+  const headline = (lang === "en" ? heroTexts.headlineEn : heroTexts.headlineEs) ?? strings.centralHeadline;
+  const customLead = lang === "en" ? heroTexts.leadEn : heroTexts.leadEs;
+  const lead = customLead ?? (spaceNames ? `${spaceNames}. ${strings.centralLeadSuffix}` : null);
 
   await reply.view("central-index.eta", {
     title: env.BASE_DOMAIN,
@@ -41,7 +47,8 @@ export async function renderCentralHome(request: FastifyRequest, reply: FastifyR
     cover,
     activeCount: spacesList.length,
     totalPublished,
-    spaceNames,
+    headline,
+    lead,
     spaces: spacesList.map((space) => ({
       name: space.name,
       description: space.description,
@@ -61,7 +68,7 @@ export async function renderCentralHome(request: FastifyRequest, reply: FastifyR
     canonical: centralUrlFor(request, lang),
     ogType: "website",
     ogTitle: env.BASE_DOMAIN,
-    ogDescription: spaceNames ? `${spaceNames}. ${strings.centralLeadSuffix}` : strings.centralLeadSuffix,
+    ogDescription: lead ?? strings.centralLeadSuffix,
     ogImage: cover ? absoluteMediaUrl(request, cover.src) : null,
   });
 }

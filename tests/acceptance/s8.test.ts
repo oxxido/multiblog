@@ -385,6 +385,8 @@ test("post con ambas versiones publicadas tiene hreflang recíproco y x-default 
   assert.match(esPage.body, new RegExp(`rel="canonical" href="${esUrl}"`));
   assert.match(esPage.body, new RegExp(`rel="alternate" hreflang="en" href="${enUrl}"`));
   assert.match(esPage.body, new RegExp(`rel="alternate" hreflang="x-default" href="${esUrl}"`));
+  assert.match(esPage.body, /<meta name="twitter:card"/);
+  assert.match(esPage.body, new RegExp(`href="https://wa\\.me/\\?text=[^"]*${encodeURIComponent(esUrl)}`));
 
   const enPage = await app.inject({ method: "GET", url: `/en/${translatedSlug}`, headers: { host } });
   assert.equal(enPage.statusCode, 200);

@@ -193,3 +193,40 @@ test("la lista de espacios ofrece Editar y Archivar, y un espacio archivado Edit
 
   await app.close();
 });
+
+test("los textos del héroe central se editan desde /admin/sitio y vuelven al por defecto si se vacían", async () => {
+  const { getHeroTexts, setHeroTexts } = await import("../../src/modules/content/siteSettings.js");
+  const { getSiteCoverMediaId } = await import("../../src/modules/media/media.js");
+  const app = await buildApp();
+  const cookie = await login(app);
+  const originalHero = await getHeroTexts();
+  const originalCover = (await getSiteCoverMediaId()) ?? "";
+
+  try {
+    const save = (fields: Record<string, string>) =>
+      app.inject({
+        method: "POST",
+        url: "/admin/sitio",
+        ...form({ coverMediaId: originalCover, headlineEs: "", headlineEn: "", leadEs: "", leadEn: "", ...fields }, cookie),
+      });
+
+    const saved = await save({ headlineEs: "Mis cosas\r\n<b>aquí</b>", leadEs: "Una bajada propia.", headlineEn: "My stuff" });
+    assert.equal(saved.statusCode, 302, saved.body);
+
+    const es = await app.inject({ method: "GET", url: "/", headers: { host: "localhost" } });
+    assert.match(es.body, /<h1>Mis cosas\n&lt;b&gt;aquí&lt;\/b&gt;<\/h1>/);
+    assert.match(es.body, /<p class="central-hero__lead">Una bajada propia\.<\/p>/);
+    assert.doesNotMatch(es.body, /Un solo sitio/);
+
+    const en = await app.inject({ method: "GET", url: "/en", headers: { host: "localhost" } });
+    assert.match(en.body, /<h1>My stuff<\/h1>/);
+    assert.doesNotMatch(en.body, /Una bajada propia/);
+
+    await save({});
+    const reset = await app.inject({ method: "GET", url: "/", headers: { host: "localhost" } });
+    assert.match(reset.body, /<h1>Un solo sitio,\nvarios espacios\.<\/h1>/);
+  } finally {
+    await setHeroTexts(originalHero);
+    await app.close();
+  }
+});

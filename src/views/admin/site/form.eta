@@ -2,7 +2,7 @@
 <div class="admin-page-header">
   <div>
     <h1>Sitio central</h1>
-    <span class="subtitle"><%= it.baseDomain %> — portada</span>
+    <span class="subtitle"><%= it.baseDomain %> — portada y textos</span>
   </div>
 </div>
 <form method="post" action="/admin/sitio">
@@ -10,7 +10,27 @@
     <span class="kicker">Imagen de cabecera</span>
     <%~ include("../../partials/cover-field", { cover: it.cover, value: it.coverMediaId }) %>
   </div>
-  <button class="btn btn-primary" type="submit">Guardar portada</button>
+  <label class="field">
+    <span class="kicker">Titular (español)</span>
+    <textarea class="input" name="headlineEs" rows="2" maxlength="120"><%= it.hero.headlineEs || "" %></textarea>
+  </label>
+  <label class="field">
+    <span class="kicker">Titular (inglés)</span>
+    <textarea class="input" name="headlineEn" rows="2" maxlength="120"><%= it.hero.headlineEn || "" %></textarea>
+  </label>
+  <label class="field">
+    <span class="kicker">Bajada (español)</span>
+    <textarea class="input" name="leadEs" rows="3" maxlength="400"><%= it.hero.leadEs || "" %></textarea>
+  </label>
+  <label class="field">
+    <span class="kicker">Bajada (inglés)</span>
+    <textarea class="input" name="leadEn" rows="3" maxlength="400"><%= it.hero.leadEn || "" %></textarea>
+  </label>
+  <p class="subtitle">
+    Vacío = texto por defecto. El titular admite saltos de línea; la bajada reemplaza a la frase con los nombres de los
+    espacios.
+  </p>
+  <button class="btn btn-primary" type="submit">Guardar</button>
 </form>
 <%~ include("../../partials/admin-foot", { scripts: ["/admin/static/coverPicker.js"] }) %>
 

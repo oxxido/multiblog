@@ -8,6 +8,7 @@
       ogTitle: it.ogTitle,
       ogDescription: it.ogDescription,
       ogImage: it.ogImage,
+      siteName: it.spaceName,
     }) %>
   </head>
   <body class="canvas-page">

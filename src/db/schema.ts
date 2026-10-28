@@ -181,4 +181,9 @@ export const sessions = pgTable("sessions", {
 export const siteSettings = pgTable("site_settings", {
   id: integer("id").primaryKey().default(1),
   coverMediaId: uuid("cover_media_id").references((): AnyPgColumn => media.id, { onDelete: "set null" }),
+  // Textos del héroe del sitio central (D26); null = el del diccionario.
+  headlineEs: text("headline_es"),
+  headlineEn: text("headline_en"),
+  leadEs: text("lead_es"),
+  leadEn: text("lead_en"),
 });
