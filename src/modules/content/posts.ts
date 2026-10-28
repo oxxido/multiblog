@@ -236,6 +236,12 @@ export async function publishPost(id: string): Promise<void> {
     .where(eq(posts.id, id));
 }
 
+// Vuelve a borrador: el post deja de responder en el sitio público. Republicar
+// pone una fecha de publicación nueva, igual que publishPost.
+export async function unpublishPost(id: string): Promise<void> {
+  await db.update(posts).set({ status: "draft", publishedAt: null }).where(eq(posts.id, id));
+}
+
 // "Publicar ya" (publishPost) y "programar" son acciones separadas
 // (docs/slices/10.md §0): programar deja status = "scheduled" y es
 // publishDuePosts (scheduler.ts), no este módulo, quien lo pasa a

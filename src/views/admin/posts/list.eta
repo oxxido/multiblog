@@ -51,6 +51,7 @@
       <th>Idioma</th>
       <th>Estado</th>
       <th>Actualizado</th>
+      <th><span class="sr-only">Acciones</span></th>
     </tr>
   </thead>
   <tbody>
@@ -74,7 +75,34 @@
         <span class="badge badge-published">Publicado</span>
         <% } %>
       </td>
-      <td><%= item.updatedAt.toISOString() %></td>
+      <td><%= it.formatDateTime(item.updatedAt) %></td>
+      <td>
+        <div class="row-actions">
+          <a class="btn btn-secondary btn-sm" href="/admin/posts/<%= item.id %>">Editar</a>
+          <% if (item.status === "published") { %>
+          <form
+            method="post"
+            action="/admin/posts/<%= item.id %>/unpublish"
+            onsubmit="return confirm('¿Despublicar este post? Vuelve a borrador y deja de responder en el sitio.')"
+          >
+            <input type="hidden" name="back" value="list" />
+            <button class="btn btn-secondary btn-sm" type="submit">Despublicar</button>
+          </form>
+          <% } else { %>
+          <form method="post" action="/admin/posts/<%= item.id %>/publish">
+            <input type="hidden" name="back" value="list" />
+            <button class="btn btn-secondary btn-sm" type="submit">Publicar</button>
+          </form>
+          <% } %>
+          <form
+            method="post"
+            action="/admin/posts/<%= item.id %>/delete"
+            onsubmit="return confirm('¿Borrar este post? No se puede deshacer.')"
+          >
+            <button class="btn btn-danger btn-sm" type="submit">Borrar</button>
+          </form>
+        </div>
+      </td>
     </tr>
     <% }) %>
   </tbody>

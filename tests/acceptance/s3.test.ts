@@ -1,7 +1,7 @@
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 process.env.BASE_DOMAIN ??= "localhost";
 process.env.DATABASE_URL ??= "postgres://multiblog:dev@localhost:5433/multiblog";
@@ -9,7 +9,7 @@ process.env.DATABASE_URL ??= "postgres://multiblog:dev@localhost:5433/multiblog"
 const { buildApp } = await import("../../src/app.js");
 const { db, closeDb } = await import("../../src/db/client.js");
 const { deleteSpacesByPrefix } = await import("../helpers/cleanup.js");
-const { posts, users } = await import("../../src/db/schema.js");
+const { categories, posts, users } = await import("../../src/db/schema.js");
 const { hashPassword } = await import("../../src/modules/auth/password.js");
 
 after(async () => {
@@ -143,9 +143,13 @@ async function createCategory(
     ...form({ spaceId, slug, name: slug, description: "" }, cookie),
   });
   assert.equal(response.statusCode, 302, response.body);
-  const id = response.headers.location?.toString().split("/").pop();
-  assert.ok(id);
-  return { id };
+  assert.equal(response.headers.location, "/admin/categorias");
+  const [row] = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(and(eq(categories.spaceId, spaceId), eq(categories.slug, slug)));
+  assert.ok(row);
+  return { id: row.id };
 }
 
 await ensureTestAdmin();
@@ -177,6 +181,38 @@ test("un post de un espacio nunca aparece en el índice de otro", async () => {
   const indexB = await app.inject({ method: "GET", url: "/", headers: { host: `${spaceB.subdomain}.localhost` } });
   assert.match(indexB.body, new RegExp(postB.slug));
   assert.doesNotMatch(indexB.body, new RegExp(postA.slug));
+
+  await app.close();
+});
+
+test("despublicar desde el listado da 404 en el sitio y republicar lo devuelve", async () => {
+  const app = await buildApp();
+  const cookie = await login(app);
+  const space = await createSpace(app, cookie);
+  const post = await createPublishedPost(app, cookie, space.id);
+  const host = `${space.subdomain}.localhost`;
+
+  const unpublish = await app.inject({
+    method: "POST",
+    url: `/admin/posts/${post.id}/unpublish`,
+    ...form({ back: "list" }, cookie),
+  });
+  assert.equal(unpublish.statusCode, 302);
+  assert.equal(unpublish.headers.location, "/admin/posts");
+  const hidden = await app.inject({ method: "GET", url: `/${post.slug}`, headers: { host } });
+  assert.equal(hidden.statusCode, 404);
+
+  const republish = await app.inject({
+    method: "POST",
+    url: `/admin/posts/${post.id}/publish`,
+    ...form({ back: "list" }, cookie),
+  });
+  assert.equal(republish.headers.location, "/admin/posts");
+  const visible = await app.inject({ method: "GET", url: `/${post.slug}`, headers: { host } });
+  assert.equal(visible.statusCode, 200);
+
+  const list = await app.inject({ method: "GET", url: "/admin/posts", headers: { cookie } });
+  assert.doesNotMatch(list.body, /\d{4}-\d{2}-\d{2}T\d{2}:/);
 
   await app.close();
 });

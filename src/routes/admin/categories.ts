@@ -53,8 +53,8 @@ export default function categoryRoutes(fastify: FastifyInstance): void {
     const { spaceId, ...input } = parsed.data;
 
     try {
-      const { id } = await createCategory(spaceId, input);
-      return await reply.redirect(`/admin/categorias/${id}`);
+      await createCategory(spaceId, input);
+      return await reply.redirect("/admin/categorias");
     } catch (error) {
       if (isUniqueViolation(error)) {
         return reply.code(400).send("Ya existe una categoría con ese slug en ese espacio");

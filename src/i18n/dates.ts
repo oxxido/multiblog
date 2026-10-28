@@ -47,3 +47,15 @@ export function formatDateLong(date: Date, lang: Lang): string {
 export function formatDateShort(date: Date, lang: Lang): string {
   return `${date.getDate().toString()} ${MONTHS_SHORT[lang][date.getMonth()] ?? ""}`;
 }
+
+function pad2(value: number): string {
+  return value.toString().padStart(2, "0");
+}
+
+// Para el admin, que escribe en español: con año y hora, a diferencia de
+// formatDateLong, porque ahí se distinguen cambios hechos el mismo día. Usa
+// la hora del servidor, igual que el campo datetime-local de "Programar".
+export function formatDateTime(date: Date): string {
+  const month = MONTHS_SHORT.es[date.getMonth()] ?? "";
+  return `${date.getDate().toString()} ${month} ${date.getFullYear().toString()}, ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+}

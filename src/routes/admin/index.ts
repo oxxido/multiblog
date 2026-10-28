@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { env } from "../../config/env.js";
+import { formatDateTime } from "../../i18n/dates.js";
 import { requireSession } from "../../middleware/auth.js";
 import { listActiveSpacesForNav, type SpaceNavItem } from "../../modules/taxonomy/spaces.js";
 import authRoutes from "./auth.js";
@@ -13,7 +14,12 @@ import siteRoutes from "./site.js";
 // tiempo de ejecución, pero no lo tipa (docs/slices/11.md T2).
 declare module "fastify" {
   interface FastifyReply {
-    locals: { activeSpaces: SpaceNavItem[]; currentPath: string; baseDomain: string } | null;
+    locals: {
+      activeSpaces: SpaceNavItem[];
+      currentPath: string;
+      baseDomain: string;
+      formatDateTime: (date: Date) => string;
+    } | null;
   }
 }
 
@@ -31,6 +37,7 @@ export default async function adminRoutes(fastify: FastifyInstance): Promise<voi
         activeSpaces: await listActiveSpacesForNav(),
         currentPath: request.url,
         baseDomain: env.BASE_DOMAIN,
+        formatDateTime,
       };
     });
 

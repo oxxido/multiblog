@@ -6,7 +6,7 @@
     <% if (it.post.status === "draft") { %>
     <span class="badge badge-draft">Borrador</span>
     <% } else if (it.post.status === "scheduled") { %>
-    <span class="badge badge-scheduled">Programado para <%= it.post.publishedAt.toISOString() %></span>
+    <span class="badge badge-scheduled">Programado para <%= it.formatDateTime(it.post.publishedAt) %></span>
     <% } else { %>
     <span class="badge badge-published">Publicado</span>
     <% } %>
@@ -63,6 +63,19 @@
           <span class="opt opt-visual">Visual</span><span class="opt opt-raw">Markdown</span>
         </button>
         <span class="divider">|</span>
+        <div class="format-group" role="group" aria-label="Formato">
+          <button type="button" class="insert-block" data-format="bold" title="Negrita" aria-label="Negrita"><strong>B</strong></button>
+          <button type="button" class="insert-block" data-format="italic" title="Cursiva" aria-label="Cursiva"><em>I</em></button>
+          <button type="button" class="insert-block" data-format="code" title="Código en línea" aria-label="Código en línea">&lt;/&gt;</button>
+          <button type="button" class="insert-block" data-format="link" title="Enlace" aria-label="Enlace">Enlace</button>
+          <button type="button" class="insert-block" data-format="h2" title="Título" aria-label="Título">H2</button>
+          <button type="button" class="insert-block" data-format="h3" title="Subtítulo" aria-label="Subtítulo">H3</button>
+          <button type="button" class="insert-block" data-format="bulletList" title="Lista" aria-label="Lista">• Lista</button>
+          <button type="button" class="insert-block" data-format="orderedList" title="Lista numerada" aria-label="Lista numerada">1. Lista</button>
+          <button type="button" class="insert-block" data-format="blockquote" title="Cita" aria-label="Cita">Cita</button>
+          <button type="button" class="insert-block" data-format="codeBlock" title="Bloque de código" aria-label="Bloque de código">Código</button>
+        </div>
+        <span class="divider">|</span>
         <button type="button" class="insert-block" data-insert-block="image">Imagen</button>
         <button type="button" class="insert-block" data-insert-block="callout">Callout</button>
         <button type="button" class="insert-block" data-insert-block="gallery">Galería</button>
@@ -88,6 +101,11 @@
       <form method="post" action="/admin/posts/<%= it.post.id %>/publish">
         <button class="btn btn-secondary btn-block" type="submit">Publicar ahora</button>
       </form>
+      <% if (it.post.status === "published") { %>
+      <form method="post" action="/admin/posts/<%= it.post.id %>/unpublish">
+        <button class="btn-ghost" type="submit">Despublicar</button>
+      </form>
+      <% } %>
       <hr class="hr" />
       <span class="kicker">Programar</span>
       <form method="post" action="/admin/posts/<%= it.post.id %>/schedule">
@@ -97,7 +115,7 @@
         </div>
       </form>
       <% if (it.post.status === "scheduled") { %>
-      <p class="field-help">Programado para <%= it.post.publishedAt.toISOString() %></p>
+      <p class="field-help">Programado para <%= it.formatDateTime(it.post.publishedAt) %></p>
       <form method="post" action="/admin/posts/<%= it.post.id %>/cancel-schedule">
         <button class="btn-ghost" type="submit">Cancelar programación</button>
       </form>

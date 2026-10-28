@@ -3,6 +3,8 @@
 
 :root {
   --color-bg: #f2f2f3;
+  --color-page: #fff;
+  --color-canvas: #e4e4e6;
   --color-text: #1d1f20;
   --rule-strong: rgba(29, 31, 32, 0.16);
   --rule-weak: rgba(29, 31, 32, 0.1);
@@ -18,8 +20,8 @@
   --sp-deep: color-mix(in oklab, var(--sp) 72%, #101110);
   --sp-line: color-mix(in oklab, var(--sp) 32%, #f2f2f3);
 
-  /* Todas las fotos van en blanco y negro (Design.md §1), expuesto acá
-     para poder cambiarlo globalmente. */
+  /* Sólo la panorámica del post va en blanco y negro (D24); las cabeceras
+     de espacio y central van a color. */
   --ph: grayscale(1) contrast(1.08);
   --ph-gradient: linear-gradient(180deg, rgba(15, 16, 17, 0.12) 0%, rgba(15, 16, 17, 0.78) 100%);
 }
@@ -147,9 +149,22 @@ img {
    Shell central — divermente.com (Design.md §2)
    ══════════════════════════════════════════════════════════════════════ */
 
+/* Columna blanca sobre lienzo gris (Design.md §1, "Fondo del lienzo"), en el
+   sitio central y en los espacios (D24). */
+.canvas-page,
+html:has(.canvas-page) {
+  background: var(--color-canvas);
+}
 .central {
   max-width: 1200px;
+  min-height: 100vh;
   margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-page);
+}
+.central-footer {
+  margin-top: auto;
 }
 
 .central-hero {
@@ -159,11 +174,11 @@ img {
   flex-direction: column;
   justify-content: space-between;
   padding: 34px 48px 44px;
-  background: var(--color-bg);
+  background: var(--color-page);
   color: var(--color-text);
 }
 /* Sin foto: fondo papel, texto en tinta. Con foto (S7, Design.md §2.1):
-   imagen a sangre en blanco y negro detrás, degradado y texto en blanco. */
+   imagen a sangre en color detrás (D24), degradado y texto en blanco. */
 .central-hero.has-cover {
   color: #fff;
 }
@@ -174,7 +189,6 @@ img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: var(--ph);
 }
 .central-hero.has-cover::after {
   content: "";
@@ -362,12 +376,24 @@ img {
 
 .space-shell {
   max-width: 1040px;
+  min-height: 100vh;
   margin-inline: auto;
   display: grid;
   grid-template-columns: 10px minmax(0, 1fr);
+  background: var(--color-page);
 }
 .space-canto {
   background: var(--sp);
+}
+/* El pie se empuja al fondo de la ventana cuando hay poco contenido, pero
+   sigue el flujo normal (no es fijo) cuando hay mucho. */
+.space-main {
+  display: flex;
+  flex-direction: column;
+}
+.space-footer,
+.post-footer {
+  margin-top: auto;
 }
 
 .space-nav {
@@ -402,11 +428,11 @@ img {
   display: flex;
   align-items: flex-end;
   padding: 0 40px 32px;
-  background: var(--color-bg);
+  background: var(--color-page);
   color: var(--color-text);
 }
-/* Sin foto: fondo papel, filete y H1 en tinta. Con foto (S7): imagen a
-   sangre en blanco y negro detrás, degradado y filete/título/entradilla en
+/* Sin foto: fondo blanco, filete y H1 en tinta. Con foto (S7): imagen a
+   sangre en color detrás (D24), degradado y filete/título/entradilla en
    blanco. */
 .space-hero.has-cover {
   color: #fff;
@@ -418,7 +444,6 @@ img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: var(--ph);
 }
 .space-hero.has-cover::after {
   content: "";
@@ -546,7 +571,7 @@ img {
 
 .post-panorama {
   height: 248px;
-  background: var(--color-bg);
+  background: var(--color-page);
 }
 /* Sin foto: fondo papel. Con foto (S7): imagen a sangre en blanco y negro,
    misma altura, sin texto encima (Design.md §3: "el recorte es libre") y
