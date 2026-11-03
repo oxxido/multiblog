@@ -11,7 +11,6 @@
 
   --font-heading: "Barlow Condensed", system-ui, sans-serif;
   --font-body: "Barlow", system-ui, sans-serif;
-  --font-serif: "Literata", Georgia, serif;
 
   /* El servidor sólo inyecta --sp (accent_color del espacio) en la raíz del
      shell de espacio; --sp-deep y --sp-line se derivan acá siempre con la
@@ -472,7 +471,7 @@ html:has(.canvas-page) {
   margin: 10px 0 0;
   font-size: 17px;
   max-width: 54ch;
-  font-family: var(--font-serif);
+  font-family: var(--font-body);
 }
 
 .category-bar {
@@ -538,7 +537,7 @@ html:has(.canvas-page) {
 }
 .post-list__excerpt {
   margin: 8px 0 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-body);
   font-size: 16.5px;
   line-height: 1.65;
   max-width: 62ch;
@@ -629,7 +628,7 @@ html:has(.canvas-page) {
 }
 .post-lead {
   margin: 18px 0 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-body);
   font-size: 20px;
   line-height: 1.55;
   color: color-mix(in srgb, var(--color-text) 78%, transparent);
@@ -706,7 +705,7 @@ html:has(.canvas-page) {
 .post-body {
   width: 100%;
   max-width: 640px;
-  font-family: var(--font-serif);
+  font-family: var(--font-body);
   font-size: 19px;
   line-height: 1.7;
 }

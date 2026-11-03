@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { db, type Executor } from "../../db/client.js";
 import { postTags, tags } from "../../db/schema.js";
 
 export function slugifyTagName(name: string): string {
@@ -35,20 +35,20 @@ export function parseTagNames(raw: string): string[] {
 
 // Si el slug ya existe, gana el nombre con el que se creó esa fila (§0): no
 // se sobreescribe el casing de un tag ya creado por cómo lo tipeó otro post.
-async function findOrCreateTagId(name: string): Promise<string> {
+async function findOrCreateTagId(executor: Executor, name: string): Promise<string> {
   const slug = slugifyTagName(name);
 
-  const [existing] = await db.select({ id: tags.id }).from(tags).where(eq(tags.slug, slug)).limit(1);
+  const [existing] = await executor.select({ id: tags.id }).from(tags).where(eq(tags.slug, slug)).limit(1);
   if (existing) {
     return existing.id;
   }
 
-  const [created] = await db.insert(tags).values({ slug, name }).onConflictDoNothing({ target: tags.slug }).returning({ id: tags.id });
+  const [created] = await executor.insert(tags).values({ slug, name }).onConflictDoNothing({ target: tags.slug }).returning({ id: tags.id });
   if (created) {
     return created.id;
   }
 
-  const [row] = await db.select({ id: tags.id }).from(tags).where(eq(tags.slug, slug)).limit(1);
+  const [row] = await executor.select({ id: tags.id }).from(tags).where(eq(tags.slug, slug)).limit(1);
   if (!row) {
     throw new Error(`No se pudo resolver el tag "${name}"`);
   }
@@ -57,19 +57,22 @@ async function findOrCreateTagId(name: string): Promise<string> {
 
 // Find-or-create secuencial (no Promise.all): si dos nombres del mismo post
 // normalizan al mismo slug, el primero de la lista es el que crea la fila.
-export async function syncPostTags(postId: string, names: string[]): Promise<void> {
-  await db.delete(postTags).where(eq(postTags.postId, postId));
+//
+// Se llama dentro de la transacción del guardado: si resolver un tag falla,
+// el borrado de los tags anteriores se revierte y el post no se queda sin tags.
+export async function syncPostTags(executor: Executor, postId: string, names: string[]): Promise<void> {
+  await executor.delete(postTags).where(eq(postTags.postId, postId));
 
   const tagIds = new Set<string>();
   for (const name of names) {
-    tagIds.add(await findOrCreateTagId(name));
+    tagIds.add(await findOrCreateTagId(executor, name));
   }
 
   if (tagIds.size === 0) {
     return;
   }
 
-  await db.insert(postTags).values([...tagIds].map((tagId) => ({ postId, tagId })));
+  await executor.insert(postTags).values([...tagIds].map((tagId) => ({ postId, tagId })));
 }
 
 export async function tagNamesForPost(postId: string): Promise<string[]> {

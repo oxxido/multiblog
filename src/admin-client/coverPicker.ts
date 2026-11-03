@@ -23,6 +23,9 @@ function mountCoverField(field: HTMLElement): void {
         return;
       }
       input.value = image.id;
+      // Asignar value no dispara eventos; el editor del post escucha change
+      // para saber que hay cambios sin guardar.
+      input.dispatchEvent(new Event("change", { bubbles: true }));
       if (preview) {
         preview.src = image.thumbnail;
         preview.hidden = false;

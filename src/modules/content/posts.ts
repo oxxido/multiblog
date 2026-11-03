@@ -1,6 +1,6 @@
 import { alias } from "drizzle-orm/pg-core";
 import { and, asc, count, desc, eq, gt, inArray, lt, ne, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { db, type Executor } from "../../db/client.js";
 import { categories, postCategories, posts, postSlugs, postTags, spaces, tags } from "../../db/schema.js";
 import { renderMarkdown } from "../../markdown/pipeline.js";
 import { syncPostTags, tagNamesForPost } from "../taxonomy/tags.js";
@@ -59,14 +59,19 @@ export interface PostInput {
 // categoría tildada que pertenece a otro espacio se descarta en silencio en
 // vez de romper el guardado, porque el formulario de post no filtra las
 // categorías por espacio antes de enviarlas (docs/slices/03.md §0).
-async function syncPostCategories(postId: string, spaceId: string, categoryIds: string[]): Promise<void> {
-  await db.delete(postCategories).where(eq(postCategories.postId, postId));
+async function syncPostCategories(
+  executor: Executor,
+  postId: string,
+  spaceId: string,
+  categoryIds: string[],
+): Promise<void> {
+  await executor.delete(postCategories).where(eq(postCategories.postId, postId));
 
   if (categoryIds.length === 0) {
     return;
   }
 
-  const validCategories = await db
+  const validCategories = await executor
     .select({ id: categories.id })
     .from(categories)
     .where(and(eq(categories.spaceId, spaceId), inArray(categories.id, categoryIds)));
@@ -75,7 +80,7 @@ async function syncPostCategories(postId: string, spaceId: string, categoryIds: 
     return;
   }
 
-  await db.insert(postCategories).values(validCategories.map((category) => ({ postId, categoryId: category.id })));
+  await executor.insert(postCategories).values(validCategories.map((category) => ({ postId, categoryId: category.id })));
 }
 
 export async function listPosts(): Promise<PostSummary[]> {
@@ -157,29 +162,34 @@ export async function getPost(id: string): Promise<PostDetail | null> {
 export async function createPost(input: PostInput): Promise<{ id: string }> {
   const bodyHtml = await renderMarkdown(input.bodyMd);
 
-  const [row] = await db
-    .insert(posts)
-    .values({
-      spaceId: input.spaceId,
-      slug: input.slug,
-      title: input.title,
-      excerpt: input.excerpt,
-      bodyMd: input.bodyMd,
-      bodyHtml,
-      coverMediaId: input.coverMediaId,
-    })
-    .returning({ id: posts.id });
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .insert(posts)
+      .values({
+        spaceId: input.spaceId,
+        slug: input.slug,
+        title: input.title,
+        excerpt: input.excerpt,
+        bodyMd: input.bodyMd,
+        bodyHtml,
+        coverMediaId: input.coverMediaId,
+      })
+      .returning({ id: posts.id });
 
-  if (!row) {
-    throw new Error("No se pudo crear el post");
-  }
+    if (!row) {
+      throw new Error("No se pudo crear el post");
+    }
 
-  await syncPostCategories(row.id, input.spaceId, input.categoryIds);
-  await syncPostTags(row.id, input.tagNames);
+    await syncPostCategories(tx, row.id, input.spaceId, input.categoryIds);
+    await syncPostTags(tx, row.id, input.tagNames);
 
-  return row;
+    return row;
+  });
 }
 
+// Todo el guardado en una transacción: antes, si fallaba a mitad (un slug
+// repetido, un tag que no se pudo resolver), el post quedaba con los tags o
+// las categorías ya borrados y sin reescribir.
 export async function updatePost(id: string, input: PostInput): Promise<void> {
   const [current] = await db
     .select({ slug: posts.slug, spaceId: posts.spaceId, lang: posts.lang, status: posts.status })
@@ -191,33 +201,35 @@ export async function updatePost(id: string, input: PostInput): Promise<void> {
     throw new Error("Post no encontrado");
   }
 
-  if (input.slug !== current.slug && current.status === "published") {
-    await db.insert(postSlugs).values({
-      postId: id,
-      spaceId: current.spaceId,
-      lang: current.lang,
-      slug: current.slug,
-    });
-  }
-
   const bodyHtml = await renderMarkdown(input.bodyMd);
 
-  await db
-    .update(posts)
-    .set({
-      spaceId: input.spaceId,
-      slug: input.slug,
-      title: input.title,
-      excerpt: input.excerpt,
-      bodyMd: input.bodyMd,
-      bodyHtml,
-      coverMediaId: input.coverMediaId,
-      updatedAt: new Date(),
-    })
-    .where(eq(posts.id, id));
+  await db.transaction(async (tx) => {
+    if (input.slug !== current.slug && current.status === "published") {
+      await tx.insert(postSlugs).values({
+        postId: id,
+        spaceId: current.spaceId,
+        lang: current.lang,
+        slug: current.slug,
+      });
+    }
 
-  await syncPostCategories(id, input.spaceId, input.categoryIds);
-  await syncPostTags(id, input.tagNames);
+    await tx
+      .update(posts)
+      .set({
+        spaceId: input.spaceId,
+        slug: input.slug,
+        title: input.title,
+        excerpt: input.excerpt,
+        bodyMd: input.bodyMd,
+        bodyHtml,
+        coverMediaId: input.coverMediaId,
+        updatedAt: new Date(),
+      })
+      .where(eq(posts.id, id));
+
+    await syncPostCategories(tx, id, input.spaceId, input.categoryIds);
+    await syncPostTags(tx, id, input.tagNames);
+  });
 }
 
 // Mismo alcance que ya tenía el botón "Guardar" de S2/S3 sobre el cuerpo

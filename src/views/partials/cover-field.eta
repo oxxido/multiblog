@@ -11,7 +11,7 @@
     name="coverMediaId"
     data-cover-input
     value="<%= it.value ? it.value : "" %>"
-    <%= it.formId ? `form="${it.formId}"` : "" %>
+    <% if (it.formId) { %>form="<%= it.formId %>"<% } %>
   />
   <div class="actions">
     <button type="button" class="btn btn-secondary" data-cover-picker>Cambiar</button>

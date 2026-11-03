@@ -46,7 +46,7 @@ Al dar de alta un espacio nuevo basta con un valor de `--sp`: canto, filete, num
 | --- | --- | --- |
 | Títulos, cabeceras, UI | Barlow Condensed (`--font-heading`) | del sistema |
 | Microcopy, metadatos, tags | Barlow (`--font-body`) | del sistema |
-| Cuerpo de lectura | **Literata** | sólo en cuerpo de post, entradilla y extractos de lista |
+| Cuerpo de lectura | Barlow (`--font-body`) | cuerpo de post, entradilla y extractos de lista; antes Literata (ver D28) |
 
 Escala usada:
 
@@ -58,9 +58,9 @@ Escala usada:
 | H2 dentro del post | 34 / 1.1 |
 | Título en lista de espacio | 34 / 1.08 |
 | Título en lista central | 23 / 1.2 |
-| Entradilla del post | Literata 20 / 1.55 |
-| Cuerpo del post | Literata 19 / 1.7 |
-| Extracto de lista | Literata 16.5 / 1.65 |
+| Entradilla del post | Barlow 20 / 1.55 |
+| Cuerpo del post | Barlow 19 / 1.7 |
+| Extracto de lista | Barlow 16.5 / 1.65 |
 | Metadatos, pies, urls | 12–12.5, `letter-spacing: .08em`, versalitas |
 | Marca en cabecera | 15–17, `letter-spacing: .16–.18em`, versalitas |
 
@@ -106,9 +106,9 @@ El identificador del espacio es estructural, no decorativo. Tres marcas siempre 
 ### Home del espacio
 
 1. **Barra de cabecera.** Nombre del espacio en versalitas a la izquierda; a la derecha "Categorías" y "← todo" (el enlace de vuelta al sitio central, en `--sp-deep`). Siempre presente, en todas las páginas del espacio.
-2. **Cabecera con foto, 320px.** Filete de 64×5px con el acento sobre el título, H1 a 54, bajada en Literata. Variante sin foto: misma altura, fondo papel, el filete y el H1 en tinta.
+2. **Cabecera con foto, 320px.** Filete de 64×5px con el acento sobre el título, H1 a 54, bajada en Barlow. Variante sin foto: misma altura, fondo papel, el filete y el H1 en tinta.
 3. **Barra de categorías.** Fila de celdas iguales (`flex: 1`), divididas por hairlines verticales, en versalitas 12.5. La activa lleva `border-bottom: 3px solid var(--sp)` y tinta plena; las demás al 65%.
-4. **Lista de posts.** Cada item es `grid-template-columns: 54px 1fr`: número de orden (01, 02, 03…) en el acento, y a la derecha línea de metadatos (categoría en `--sp-deep` · fecha · minutos de lectura), título a 34 y extracto en Literata. Separados por `--sp-line`.
+4. **Lista de posts.** Cada item es `grid-template-columns: 54px 1fr`: número de orden (01, 02, 03…) en el acento, y a la derecha línea de metadatos (categoría en `--sp-deep` · fecha · minutos de lectura), título a 34 y extracto en Barlow. Separados por `--sp-line`.
 5. **Paginación.** `.btn.btn-secondary` "Posts anteriores" y contador "1 de 3".
 6. **Pie.** Subdominio a la izquierda, RSS del espacio y "← todo" a la derecha.
 
@@ -118,7 +118,7 @@ El identificador del espacio es estructural, no decorativo. Tres marcas siempre 
 2. **Panorámica, 248px** a todo el ancho, en blanco y negro, cerrada por abajo con una franja de **5px** en `--sp`. Sin texto encima: el recorte es libre.
 3. **Línea de contexto** inmediatamente bajo la franja: a la izquierda categoría (`--sp-deep`) · fecha · lectura; a la derecha el pie de foto, alineado a la derecha, máximo 40ch.
 4. **Título y entradilla** en la columna de 640px, sobre papel.
-5. **Cuerpo** en Literata 19/1.7, párrafos con `margin-bottom: 24px`, H2 a 34 con `margin-top: 48px`.
+5. **Cuerpo** en Barlow 19/1.7, párrafos con `margin-bottom: 24px`, H2 a 34 con `margin-top: 48px`.
 6. **Bloques ricos.** El ritmo visual del artículo es el ancho de cada bloque, no el color:
    - `callout` — dentro de la columna, `border-left: 4px solid var(--sp)` y fondo `color-mix(in srgb, var(--sp) 9%, transparent)`, con etiqueta en versalitas 11.
    - `gallery` — 860px, retícula de N columnas de marcos `.blueprint` en 4:3, con pie debajo.
