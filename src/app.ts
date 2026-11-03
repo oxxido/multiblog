@@ -10,7 +10,9 @@ import adminRoutes from "./routes/admin/index.js";
 import { env } from "./config/env.js";
 
 export async function buildApp(): Promise<FastifyInstance> {
-  const app = Fastify({ logger: true });
+  // El límite por defecto (1 MiB) rechazaba con 413 el guardado de posts muy
+  // largos: un formulario codificado ocupa ~1.35× el texto.
+  const app = Fastify({ logger: true, bodyLimit: 8 * 1024 * 1024 });
 
   // @fastify/static sólo avisa (no falla) si `root` no existe todavía, pero
   // serviría 404 para todo hasta la primera subida: se crea de antemano.

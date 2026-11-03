@@ -20,6 +20,7 @@ import { listCategories } from "../../modules/taxonomy/categories.js";
 import { parseTagNames } from "../../modules/taxonomy/tags.js";
 import { fromMarkdown } from "../../markdown/tiptap/fromMarkdown.js";
 import { resolveCoverImage } from "../../modules/media/media.js";
+import { assistText, DEFAULT_PROMPTS } from "../../modules/ai/assist.js";
 import { translatePost } from "../../modules/translation/translate.js";
 import { previewUrlFor } from "../public/urls.js";
 
@@ -67,6 +68,7 @@ const editPostFormSchema = z.object({
 });
 
 const autosaveBodySchema = z.object({ bodyMd: z.string() });
+const assistBodySchema = z.object({ prompt: z.string().trim().min(1).max(4000), bodyMd: z.string().trim().min(1).max(200_000) });
 
 const idParamSchema = z.object({ id: z.uuid() });
 
@@ -159,6 +161,7 @@ export default function postRoutes(fastify: FastifyInstance): void {
       sibling,
       siblingIsStale,
       translateError: translateError ?? null,
+      assistPrompts: DEFAULT_PROMPTS,
       action: `/admin/posts/${id}`,
       initialDoc: fromMarkdown(post.bodyMd),
       previewUrl: previewUrlFor(request, space.subdomain, post.previewToken),
@@ -192,6 +195,24 @@ export default function postRoutes(fastify: FastifyInstance): void {
 
     await autosavePostBody(id, parsed.data.bodyMd);
     return reply.code(204).send();
+  });
+
+  // Recibe el cuerpo que el editor tiene en pantalla (puede no estar guardado)
+  // y devuelve el Markdown propuesto; no escribe nada: reemplazar el texto es
+  // decisión del autor en el cliente.
+  fastify.post("/assist", async (request, reply) => {
+    const parsed = assistBodySchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "Falta el prompt o el texto del post" });
+    }
+
+    try {
+      const bodyMd = await assistText(parsed.data);
+      return await reply.send({ bodyMd });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudo procesar el texto";
+      return reply.code(502).send({ error: message });
+    }
   });
 
   fastify.post<{ Params: { id: string } }>("/:id/translate", async (request, reply) => {

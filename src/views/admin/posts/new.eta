@@ -18,7 +18,7 @@
     </label>
     <label class="field">
       <span class="kicker">Slug</span>
-      <input class="input" type="text" name="slug" placeholder="proteina-vegetal" required />
+      <input class="input" type="text" name="slug" placeholder="Se completa solo con el título" required />
     </label>
     <label class="field">
       <span class="kicker">Título</span>
@@ -31,5 +31,5 @@
   </label>
   <button class="btn btn-primary" type="submit">Crear y abrir editor</button>
 </form>
-<%~ include("../../partials/admin-foot") %>
+<%~ include("../../partials/admin-foot", { scripts: ["/admin/static/slugFromTitle.js"] }) %>
 

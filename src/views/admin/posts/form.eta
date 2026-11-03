@@ -58,6 +58,41 @@
         <textarea class="input" name="excerpt" rows="2"><%= it.post.excerpt ? it.post.excerpt : "" %></textarea>
       </label>
 
+      <div class="banner banner-error" data-editor-error role="alert" hidden><span data-editor-error-text></span></div>
+      <div
+        class="ai-assist"
+        data-ai-assist
+        data-prompt-improve="<%= it.assistPrompts.improve %>"
+        data-prompt-review="<%= it.assistPrompts.review %>"
+      >
+        <div class="ai-assist__actions">
+          <button type="button" class="insert-block" data-ai-open="improve">
+            <svg class="ai-assist__star" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M12 2l2.9 6.6 7.1.7-5.4 4.8 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.3l7.1-.7z" /></svg>
+            Mejorar post
+          </button>
+          <button type="button" class="insert-block" data-ai-open="review">Revisar este texto</button>
+        </div>
+        <section class="ai-panel" data-ai-panel hidden>
+          <div class="ai-panel__head">
+            <span class="kicker" data-ai-title></span>
+            <button type="button" class="btn-ghost" data-ai-close>Cerrar</button>
+          </div>
+          <textarea class="input" rows="4" data-ai-prompt aria-label="Prompt"></textarea>
+          <div class="ai-panel__run">
+            <button type="button" class="btn btn-primary" data-ai-run></button>
+            <span class="ai-panel__status" data-ai-status role="status"></span>
+          </div>
+          <div class="ai-panel__result" data-ai-result hidden>
+            <span class="kicker">Resultado</span>
+            <textarea class="input" rows="18" readonly data-ai-output aria-label="Resultado"></textarea>
+            <div class="ai-panel__run">
+              <button type="button" class="btn btn-secondary" data-ai-replace>Reemplazar texto</button>
+              <button type="button" class="btn-ghost" data-ai-undo hidden>Deshacer reemplazo</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
       <div class="editor-toolbar">
         <button type="button" class="seg-toggle" data-editor-toggle data-mode="visual">
           <span class="opt opt-visual">Visual</span><span class="opt opt-raw">Markdown</span>
