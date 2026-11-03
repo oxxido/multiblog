@@ -17,7 +17,7 @@ const { hashPassword } = await import("../../src/modules/auth/password.js");
 const mediaIds: string[] = [];
 
 after(async () => {
-  await deleteSpacesByPrefix(db, "espacio-s11g-");
+  await deleteSpacesByPrefix(db, "espacio-guardado-");
   for (const id of mediaIds) {
     await db.delete(media).where(eq(media.id, id));
   }
@@ -56,7 +56,7 @@ async function login(app: App): Promise<string> {
 
 async function createSpaceAndPost(app: App, cookie: string): Promise<{ spaceId: string; postId: string; slug: string; title: string }> {
   const suffix = randomUUID().slice(0, 8);
-  const spaceSlug = `espacio-s11g-${suffix}`;
+  const spaceSlug = `espacio-guardado-${suffix}`;
   const spaceResponse = await app.inject({
     method: "POST",
     url: "/admin/espacios",
@@ -238,7 +238,7 @@ test("'Publicar ahora' desde el editor redirige a la publicaci√≥n en el sitio p√
 
   const publish = await app.inject({ method: "POST", url: `/admin/posts/${postId}/publish`, ...form({ back: "public" }, cookie) });
   assert.equal(publish.statusCode, 302, publish.body);
-  assert.match(publish.headers.location?.toString() ?? "", new RegExp(`^http://espacio-s11g-[a-z0-9]+\\.localhost(:\\d+)?/${slug}$`));
+  assert.match(publish.headers.location?.toString() ?? "", new RegExp(`^http://espacio-guardado-[a-z0-9]+\\.localhost(:\\d+)?/${slug}$`));
 
   await app.close();
 });
