@@ -47,6 +47,8 @@ export function blockFromMdast(node: RootContent): TiptapNode {
       return codeBlockFromMdast(node);
     case "table":
       return tableFromMdast(node);
+    case "thematicBreak":
+      return { type: "horizontalRule" };
     case "containerDirective":
     case "leafDirective": {
       const { block, attrs } = resolveBlock(node);
@@ -116,6 +118,10 @@ function inlineNodeFromMdast(node: PhrasingContent, marks: TiptapMark[]): Tiptap
       return inlineFromMdast(node.children, [...marks, { type: "bold" }]);
     case "emphasis":
       return inlineFromMdast(node.children, [...marks, { type: "italic" }]);
+    case "delete":
+      return inlineFromMdast(node.children, [...marks, { type: "strike" }]);
+    case "break":
+      return [{ type: "hardBreak" }];
     case "inlineCode":
       return [textNode(node.value, [...marks, { type: "code" }])];
     case "link":

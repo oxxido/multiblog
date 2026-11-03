@@ -256,3 +256,47 @@ en todas las páginas. Tres ajustes, en el shell de espacio (home y post) y, des
 - `.space-shell` y `.central` ocupan al menos el alto de la ventana y el pie queda al fondo
   con `margin-top: auto`; si el contenido es más largo, el pie sigue el flujo.
   El canto de color se estira con la columna.
+
+### D25 — Asistencia de IA en el editor: "Mejorar post" y "Revisar este texto"
+
+Segundo uso de IA en el proyecto, después de la traducción (D16), sin cambios
+de stack ni de esquema: mismo proveedor (OpenRouter, `openrouter/auto`), mismo
+SDK `openai`, misma `OPENROUTER_API_KEY`.
+
+- Dos botones sobre la barra del editor abren un panel dentro de la página (no
+  un popup, por el largo de los textos). El panel trae un prompt editable
+  precargado (mejorar / actuar como editor), un botón que ejecuta, el
+  resultado debajo y "Reemplazar texto". El prompt y el botón siguen
+  disponibles para volver a ejecutar; tras reemplazar hay "Deshacer reemplazo".
+- Siempre procesa y reemplaza el post entero, con el Markdown que el editor
+  tiene en pantalla aunque no esté guardado. `POST /admin/posts/assist` no
+  escribe nada; reemplazar es decisión del autor en el cliente y el autosave
+  de siempre lo guarda.
+- Los prompts por defecto viven en `src/modules/ai/assist.ts`. Las reglas que
+  protegen el formato van en un prompt de sistema aparte, que el autor no ve
+  ni edita.
+- Mismo criterio que la traducción (`.claude/rules/Markdown.md`): el resultado
+  se descarta entero si cambian las directivas (cantidad, tipo, atributos).
+  No se guarda ni se muestra una propuesta que rompa los bloques.
+
+### D26 — Línea horizontal, tachado y salto de línea en el editor visual
+
+El editor visual (StarterKit de TipTap) aceptaba `---`, `~~tachado~~` y
+Shift+Enter, pero `toMarkdown`/`fromMarkdown` no los soportaban: guardar
+fallaba sin aviso y el texto escrito se perdía. Decisión del usuario: se
+soportan de verdad, no se desactivan.
+
+- Nodo `horizontalRule` ↔ `thematicBreak` (`---`), nodo `hardBreak` ↔ `break`
+  (barra invertida al final de línea) y marca `strike` ↔ `delete` (`~~`).
+  Cada uno con su test de ida y vuelta en `tests/roundtrip/`. El pipeline no
+  cambia: `hr`, `del` y `br` ya pasan el esquema de `rehype-sanitize`.
+- El subrayado sigue desactivado: Markdown no tiene sintaxis para él.
+- `toMarkdown` agrupa los tramos contiguos que comparten una marca y fija el
+  orden de anidado (enlace, tachado, negrita, cursiva, código). Antes cada
+  tramo se envolvía por separado, y `~~**a** y *b*~~` salía con `~~` sueltos.
+  Los espacios al final de línea (`a  \nb`) se normalizan a barra invertida.
+- `tests/unit/editorSchema.test.ts` falla si el editor vuelve a admitir un
+  nodo o marca que no se pueda guardar.
+- El editor ya no guarda en silencio: si la conversión a Markdown falla, el
+  formulario no se envía y un banner muestra el motivo; lo mismo con el
+  autoguardado y con el cambio entre modo visual y Markdown.

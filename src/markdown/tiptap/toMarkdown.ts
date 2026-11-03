@@ -58,6 +58,8 @@ export function blockToMdast(node: TiptapNode): BlockContent {
       return codeBlockToMdast(node);
     case "table":
       return tableToMdast(node);
+    case "horizontalRule":
+      return { type: "thematicBreak" };
     default: {
       const block = getBlock(node.type);
       if (!block) {
@@ -133,11 +135,61 @@ function cellInlineContent(cell: TiptapNode): PhrasingContent[] {
   return inlineToMdast(paragraph.content ?? []);
 }
 
-function inlineToMdast(nodes: TiptapNode[]): PhrasingContent[] {
-  return nodes.map(inlineNodeToMdast);
+interface InlineRun {
+  node: TiptapNode;
+  marks: TiptapMark[];
 }
 
-function inlineNodeToMdast(node: TiptapNode): PhrasingContent {
+// Orden de anidado, de afuera hacia adentro. ProseMirror ordena las marcas
+// por el orden del esquema, que no es el que conviene para agrupar (dejaría
+// el tachado como la más interna); el serializador fija el suyo.
+const MARK_NESTING = ["link", "strike", "bold", "italic", "code"];
+
+function markRank(mark: TiptapMark): number {
+  const rank = MARK_NESTING.indexOf(mark.type);
+  return rank === -1 ? MARK_NESTING.length : rank;
+}
+
+function inlineToMdast(nodes: TiptapNode[]): PhrasingContent[] {
+  return groupRuns(
+    nodes.map((node) => ({
+      node,
+      marks: node.type === "text" ? [...(node.marks ?? [])].sort((a, b) => markRank(a) - markRank(b)) : [],
+    })),
+  );
+}
+
+function sameMark(a: TiptapMark | undefined, b: TiptapMark): boolean {
+  return a !== undefined && a.type === b.type && JSON.stringify(a.attrs ?? {}) === JSON.stringify(b.attrs ?? {});
+}
+
+// Los tramos contiguos que comparten la marca más externa van dentro de un
+// mismo nodo mdast: sin esto, `~~**a** y *b*~~` saldría como tres tachados
+// separados, uno de ellos con espacios en el borde (`~~ y ~~`), que
+// Markdown no interpreta y el stringify termina escapando.
+function groupRuns(runs: InlineRun[]): PhrasingContent[] {
+  const result: PhrasingContent[] = [];
+  let index = 0;
+  while (index < runs.length) {
+    const run = runs[index];
+    const mark = run?.marks[0];
+    if (!run || !mark) {
+      result.push(inlineLeafToMdast(run?.node ?? { type: "text", text: "" }));
+      index += 1;
+      continue;
+    }
+    let end = index + 1;
+    while (end < runs.length && sameMark(runs[end]?.marks[0], mark)) {
+      end += 1;
+    }
+    const inner = runs.slice(index, end).map((item) => ({ node: item.node, marks: item.marks.slice(1) }));
+    result.push(wrapMark(mark, inner));
+    index = end;
+  }
+  return result;
+}
+
+function inlineLeafToMdast(node: TiptapNode): PhrasingContent {
   if (node.type === "image") {
     const alt = (node.attrs?.alt as string | undefined) ?? "";
     return {
@@ -147,35 +199,34 @@ function inlineNodeToMdast(node: TiptapNode): PhrasingContent {
       title: null,
     };
   }
+  if (node.type === "hardBreak") {
+    return { type: "break" };
+  }
   if (node.type !== "text") {
     throw new Error(`Nodo en línea del editor visual no soportado en Markdown: ${node.type}`);
   }
-  return wrapMarks(node.text ?? "", node.marks ?? []);
+  return { type: "text", value: node.text ?? "" };
 }
 
 // Las marcas de un nodo de texto de ProseMirror son un conjunto plano; acá
 // se reconstruye el anidamiento de Markdown a partir de ese conjunto, en el
-// mismo orden (más externa primero) en que fromMarkdown.ts las acumula al
-// bajar por el árbol — así ida y vuelta usan la misma convención de orden.
-function wrapMarks(text: string, marks: TiptapMark[]): PhrasingContent {
-  const [mark, ...rest] = marks;
-  if (!mark) {
-    return { type: "text", value: text };
-  }
-
+// orden de MARK_NESTING (más externa primero).
+function wrapMark(mark: TiptapMark, inner: InlineRun[]): PhrasingContent {
   switch (mark.type) {
     case "bold":
-      return { type: "strong", children: [wrapMarks(text, rest)] };
+      return { type: "strong", children: groupRuns(inner) };
     case "italic":
-      return { type: "emphasis", children: [wrapMarks(text, rest)] };
+      return { type: "emphasis", children: groupRuns(inner) };
+    case "strike":
+      return { type: "delete", children: groupRuns(inner) };
     case "code":
-      return { type: "inlineCode", value: text };
+      return { type: "inlineCode", value: inner.map((item) => item.node.text ?? "").join("") };
     case "link":
       return {
         type: "link",
         url: mark.attrs?.href as string,
         title: (mark.attrs?.title as string | undefined) ?? null,
-        children: [wrapMarks(text, rest)],
+        children: groupRuns(inner),
       };
     default:
       throw new Error(`Marca del editor visual no soportada en Markdown: ${mark.type}`);

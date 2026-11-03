@@ -16,8 +16,11 @@ import { blockTiptapNodes } from "../blocks/index.js";
 // en vez de producir un documento que un lado entiende y el otro no. Un
 // bloque nuevo no toca este archivo: sale de `blockTiptapNodes`, que crece
 // en src/markdown/blocks/index.ts.
+//
+// Subrayado desactivado: Markdown no tiene sintaxis para él, y dejarlo hace
+// que Ctrl+U produzca un documento que no se puede guardar.
 export const tiptapExtensions = [
-  StarterKit.configure({ link: false }),
+  StarterKit.configure({ link: false, underline: false }),
   Link.configure({ openOnClick: false, autolink: false }),
   Table,
   TableRow,

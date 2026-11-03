@@ -648,6 +648,75 @@ textarea.input:focus {
   color: var(--color-bg);
 }
 
+/* — asistencia de IA en el editor — */
+.ai-assist {
+  margin: 20px 0 0;
+}
+.ai-assist__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ai-assist__star {
+  vertical-align: -2px;
+  margin-right: 4px;
+}
+.ai-panel {
+  border: 1px solid var(--rule-weak);
+  padding: 16px;
+  margin-top: 12px;
+}
+.ai-panel[hidden] {
+  display: none;
+}
+.ai-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.ai-panel__run {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 12px 0;
+}
+.ai-panel__status {
+  font-size: 13px;
+  color: color-mix(in srgb, var(--color-text) 65%, transparent);
+}
+.ai-panel__status.is-busy::before {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 8px;
+  vertical-align: -2px;
+  border: 2px solid var(--rule-strong);
+  border-top-color: var(--color-text);
+  border-radius: 50%;
+  animation: ai-spin 0.8s linear infinite;
+}
+@keyframes ai-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-panel__status.is-busy::before {
+    animation: none;
+  }
+}
+.ai-panel__result[hidden] {
+  display: none;
+}
+.ai-panel__result textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13.5px;
+  line-height: 1.6;
+  min-height: 360px;
+}
+
 .insert-block {
   border: 1px solid var(--rule-strong);
   background: transparent;
@@ -672,10 +741,11 @@ textarea.input:focus {
 #editor-visual {
   border: 1px solid var(--rule-weak);
   padding: 16px;
-  min-height: 240px;
+  min-height: 720px;
 }
 #editor-visual .ProseMirror {
   outline: none;
+  min-height: 686px;
   font-size: 15.5px;
   line-height: 1.65;
 }
@@ -684,7 +754,7 @@ textarea[name="bodyMd"].input {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 13.5px;
   line-height: 1.6;
-  min-height: 240px;
+  min-height: 720px;
 }
 
 .editor-sidebar .card + .card {
@@ -707,7 +777,7 @@ textarea[name="bodyMd"].input {
   margin-bottom: 16px;
 }
 .cover-preview {
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 8 / 3;
   width: 100%;
   display: flex;
   align-items: center;

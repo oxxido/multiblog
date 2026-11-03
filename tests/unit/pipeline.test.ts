@@ -27,3 +27,10 @@ test("sanea HTML embebido en el markdown", async () => {
   const html = await renderMarkdown("<script>alert(1)</script>\n\nTexto.");
   assert.doesNotMatch(html, /<script>/);
 });
+
+test("línea horizontal, tachado y salto de línea llegan al HTML saneado", async () => {
+  const html = await renderMarkdown("Antes ~~mal~~ bien\\\nsegunda línea.\n\n---\n\nDespués.\n");
+  assert.match(html, /<del>mal<\/del>/);
+  assert.match(html, /<br>/);
+  assert.match(html, /<hr>/);
+});

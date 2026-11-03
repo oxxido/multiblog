@@ -3,6 +3,7 @@ import { tiptapExtensions } from "../markdown/tiptap/extensions.js";
 import { fromMarkdown } from "../markdown/tiptap/fromMarkdown.js";
 import { toMarkdown } from "../markdown/tiptap/toMarkdown.js";
 import type { TiptapDoc } from "../markdown/tiptap/types.js";
+import { mountAiAssist } from "./aiAssist.js";
 import { closeMediaPanel, openMediaPanel } from "./mediaPanel.js";
 
 type Mode = "visual" | "raw";
@@ -54,21 +55,34 @@ function currentMode(toggle: HTMLButtonElement): Mode {
   return toggle.dataset.mode === "raw" ? "raw" : "visual";
 }
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "error desconocido";
+}
+
 // POST/:id/autosave sólo toca body_md/body_html (docs/slices/05.md §0): acá
 // no hay slug, title, status ni categorías que mandar, sólo el Markdown
 // vigente en el modo que esté activo.
-function scheduleAutosave(postId: string, getBodyMd: () => string): () => void {
+function scheduleAutosave(postId: string, getBodyMd: () => string, onError: (message: string) => void): () => void {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   return () => {
     if (timeoutId !== undefined) {
       clearTimeout(timeoutId);
     }
     timeoutId = setTimeout(() => {
-      void fetch(`/admin/posts/${postId}/autosave`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ bodyMd: getBodyMd() }),
-      });
+      void (async () => {
+        try {
+          const response = await fetch(`/admin/posts/${postId}/autosave`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ bodyMd: getBodyMd() }),
+          });
+          if (!response.ok) {
+            throw new Error(`el servidor respondió ${String(response.status)}`);
+          }
+        } catch (error) {
+          onError(`El autoguardado falló (${errorMessage(error)}). Copiá tu texto antes de recargar.`);
+        }
+      })();
     }, AUTOSAVE_DEBOUNCE_MS);
   };
 }
@@ -315,6 +329,20 @@ function mountEditor(): void {
     return;
   }
 
+  const errorBanner = document.querySelector<HTMLElement>("[data-editor-error]");
+  const errorText = document.querySelector<HTMLElement>("[data-editor-error-text]");
+  const showError = (message: string): void => {
+    if (errorBanner && errorText) {
+      errorText.textContent = message;
+      errorBanner.hidden = false;
+    }
+  };
+  const clearError = (): void => {
+    if (errorBanner) {
+      errorBanner.hidden = true;
+    }
+  };
+
   const elements: EditorElements = { textarea, visual, toggle, insertButtons, formatButtons, mediaPanel };
 
   const editor = new Editor({
@@ -327,25 +355,59 @@ function mountEditor(): void {
   mountFormatToolbar(editor, formatButtons);
   setMode("visual", elements);
 
-  const autosave = scheduleAutosave(postId, () =>
-    currentMode(toggle) === "visual" ? toMarkdown(toTiptapDoc(editor.getJSON())) : textarea.value,
+  const autosave = scheduleAutosave(
+    postId,
+    () => (currentMode(toggle) === "visual" ? toMarkdown(toTiptapDoc(editor.getJSON())) : textarea.value),
+    showError,
   );
   editor.on("update", autosave);
   textarea.addEventListener("input", autosave);
 
+  mountAiAssist({
+    getBodyMd: () => (currentMode(toggle) === "visual" ? toMarkdown(toTiptapDoc(editor.getJSON())) : textarea.value),
+    setBodyMd: (markdown) => {
+      if (currentMode(toggle) === "visual") {
+        editor.commands.setContent(fromMarkdown(markdown), { emitUpdate: true });
+      } else {
+        textarea.value = markdown;
+        autosave();
+      }
+    },
+  });
+
   toggle.addEventListener("click", () => {
     if (currentMode(toggle) === "visual") {
-      textarea.value = toMarkdown(toTiptapDoc(editor.getJSON()));
+      try {
+        textarea.value = toMarkdown(toTiptapDoc(editor.getJSON()));
+      } catch (error) {
+        showError(`No se pudo pasar el texto a Markdown: ${errorMessage(error)}`);
+        return;
+      }
+      clearError();
       setMode("raw", elements);
     } else {
-      editor.commands.setContent(fromMarkdown(textarea.value));
+      try {
+        editor.commands.setContent(fromMarkdown(textarea.value));
+      } catch (error) {
+        showError(`El editor visual no puede abrir este Markdown: ${errorMessage(error)}`);
+        return;
+      }
+      clearError();
       setMode("visual", elements);
     }
   });
 
-  textarea.form.addEventListener("submit", () => {
-    if (currentMode(toggle) === "visual") {
+  // Si la serialización falla no se envía: el textarea todavía tiene el
+  // texto de la última carga y guardarlo pisaría lo escrito sin avisar.
+  textarea.form.addEventListener("submit", (event) => {
+    if (currentMode(toggle) !== "visual") {
+      return;
+    }
+    try {
       textarea.value = toMarkdown(toTiptapDoc(editor.getJSON()));
+    } catch (error) {
+      event.preventDefault();
+      showError(`No se guardó: ${errorMessage(error)}`);
     }
   });
 }
