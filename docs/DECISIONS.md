@@ -300,3 +300,82 @@ soportan de verdad, no se desactivan.
 - El editor ya no guarda en silencio: si la conversión a Markdown falla, el
   formulario no se envía y un banner muestra el motivo; lo mismo con el
   autoguardado y con el cambio entre modo visual y Markdown.
+
+### D27 — Lo escrito nunca se pierde: guardado robusto y portada del post
+
+El autor perdió un post entero cuando un error de JS impidió guardar, sin
+ningún aviso visible. Causas encontradas y decisión: escribir es lo más
+importante, así que ningún fallo de script, de red o del servidor puede
+llevarse el texto.
+
+- **Guardar por `fetch`, no por navegación nativa.** El submit del formulario
+  del post lo intercepta `editor.ts`: si el servidor rechaza el envío, la red
+  falla o la sesión venció, la página no cambia y el motivo aparece en un
+  aviso fijo (sticky) arriba del editor y en la barra lateral. Sólo se
+  navega cuando el servidor confirmó el guardado, y entonces se muestra
+  "Guardado a las HH:MM".
+- **Respaldo local** (`src/admin-client/draftBackup.ts`, `localStorage`):
+  título, extracto y cuerpo se respaldan 400 ms después de cada cambio y al
+  cerrar o esconder la pestaña. Si al abrir el post el respaldo no coincide
+  con lo guardado, una barra ofrece "Restaurar"/"Descartar". El respaldo sólo
+  se borra tras un guardado confirmado. Es un seguro extra: si el
+  almacenamiento falla, el guardado normal no se ve afectado.
+- **Errores de JS no atrapados** (`error`, `unhandledrejection`) muestran el
+  mismo aviso. Si el editor visual no arranca, el campo Markdown pasa a ser
+  el editor y se envía igual.
+- **`beforeunload`** avisa si hay cambios sin guardar (el autoguardado sólo
+  cubre el cuerpo; título, extracto, categorías, tags y portada no).
+- **Guardar no se bloqueaba por un error de JS sino por validación nativa:**
+  el `<textarea name="bodyMd">` oculto tenía `required` y sólo se sincronizaba
+  al enviar, así que un post nuevo (cuerpo vacío) no se podía guardar y el
+  navegador no mostraba nada. Se quitó `required`, el textarea se mantiene
+  sincronizado con el editor, y el servidor acepta `bodyMd` vacío en
+  `POST /admin/posts/:id` (el autoguardado ya lo aceptaba).
+- **Portada del post:** el partial `cover-field.eta` armaba el atributo
+  `form="post-form"` con `<%= %>`, que lo escapaba a `form=&quot;post-form&quot;`.
+  El input quedaba fuera del formulario, `coverMediaId` no viajaba y cada
+  guardado dejaba la portada en `null`. Corregido; `coverPicker.ts` además
+  dispara `change` para que el editor sepa que hay cambios.
+- Tests: `tests/unit/admin/` (respaldo, atributo `form` del partial) y
+  `tests/acceptance/s11-guardado.test.ts` (portada persistida, cuerpo vacío,
+  textarea sin `required`).
+
+### D28 — Acciones del editor que guardan primero, traducción que hereda, y Barlow en todo el sitio
+
+Continuación de D27, a pedido del usuario tras probar el editor.
+
+- **Los botones de acción guardan antes de actuar.** "Publicar ahora",
+  "Programar", "Despublicar" y "Traducir al inglés" son formularios aparte:
+  navegaban sin guardar lo escrito (se perdían título, extracto, tags,
+  categorías y portada) y la traducción salía del texto viejo. Ahora
+  `editor.ts` guarda el formulario del post por `fetch`, y sólo con el
+  guardado confirmado envía la acción. Mientras tanto el botón queda
+  deshabilitado con su leyenda ("Publicando…", "Programando…",
+  "Despublicando…", "Traduciendo…", esta última con el aviso de que puede
+  tardar). Si guardar falla, no se envía la acción y el aviso rojo dice
+  "NO SE GUARDÓ" con el motivo. Tras un guardado con "Guardar" aparece un
+  aviso verde "✓ Post guardado correctamente".
+- **"Publicar ahora" lleva a la publicación.** El formulario manda
+  `back=public` y el servidor redirige a la URL pública del post
+  (`spaceUrlFor` + slug, con prefijo `/en` si corresponde). Es un valor
+  cerrado: la URL se arma en el servidor, no viene del cliente.
+- **La traducción nace con los tags, categorías y portada del original**
+  (`translatePost`, sólo al crearla; al retraducir no se pisa lo que el autor
+  ajustó en el inglés). Antes nacía vacía y, al caer en ella tras "Traducir",
+  parecía que los tags se habían borrado. No hay cambio de esquema; los tags
+  son filas globales, así que la traducción apunta a las mismas.
+- **Crear y guardar un post son transacciones** (`createPost`, `updatePost`):
+  el historial de slug, el `UPDATE` y la sincronización de categorías y tags
+  se confirman juntos o no se confirma nada. `syncPostTags` y
+  `syncPostCategories` reciben el ejecutor (`Executor` en `db/client.ts`).
+- **Tipografía: Barlow en todo el sitio.** El cuerpo del post, la entradilla
+  y los extractos de lista usaban Literata (serif), según `docs/Design.md`;
+  no coincidía con la portada. A pedido del usuario pasan a Barlow
+  (`--font-body`), con cursiva y 600 cargados, y se elimina Literata y su
+  carga de Google Fonts. Revierte la fila "Cuerpo de lectura" de
+  `Design.md` §1 (ya actualizado). Los tamaños y interlineados no cambian.
+- Tests nuevos en `tests/acceptance/s11-guardado.test.ts`: contrato de campos
+  asociados al formulario (el que habría atrapado el bug de la portada),
+  tags y categorías persistidos, guardado fallido sin rastros, redirección de
+  "Publicar ahora" y herencia en la traducción.
+

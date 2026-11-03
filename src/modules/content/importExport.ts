@@ -189,7 +189,7 @@ async function upsertPostFile(
   }
 
   await setPostCategories(postId, categoryIds);
-  await syncPostTags(postId, file.tagNames);
+  await syncPostTags(db, postId, file.tagNames);
 
   return { id: postId, translationGroupId, created };
 }

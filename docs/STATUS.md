@@ -634,7 +634,16 @@ A pedido del usuario, sobre lo ya desplegado (D23, D24):
   H2/H3, listas, cita y bloque de código. Sólo formatos con round-trip a
   Markdown ya cubiertos por `tests/roundtrip/`.
 
-`pnpm lint && pnpm typecheck && pnpm test` en verde (133 tests). Sin probar en
+- **Guardado robusto (D27):** el post se guarda por `fetch` con el error a la
+  vista, el texto se respalda en el navegador y se puede restaurar, y la
+  portada del post ya se persiste (el atributo `form` salía escapado).
+  Sin probar en navegador real: el flujo completo de guardado/restauración.
+- **Acciones que guardan primero (D28):** Publicar/Programar/Despublicar/
+  Traducir guardan el formulario antes de actuar, con el botón deshabilitado y
+  su leyenda; "Publicar ahora" lleva a la publicación; la traducción hereda
+  tags, categorías y portada; Barlow reemplaza a Literata en el sitio público.
+
+`pnpm lint && pnpm typecheck && pnpm test` en verde (167 tests). Sin probar en
 navegador real: la barra del editor y el nuevo fondo/columna.
 
 **Pendiente:** fijar `TZ` en el compose del VPS para que las fechas del admin

@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
   autosavePostBody,
@@ -22,7 +22,7 @@ import { fromMarkdown } from "../../markdown/tiptap/fromMarkdown.js";
 import { resolveCoverImage } from "../../modules/media/media.js";
 import { assistText, DEFAULT_PROMPTS } from "../../modules/ai/assist.js";
 import { translatePost } from "../../modules/translation/translate.js";
-import { previewUrlFor } from "../public/urls.js";
+import { previewUrlFor, spaceUrlFor } from "../public/urls.js";
 
 // Checkboxes repetidos llegan como array; ninguno tildado llega ausente.
 function toArray(value: unknown): unknown[] {
@@ -61,7 +61,7 @@ const editPostFormSchema = z.object({
   slug: slugField,
   title: z.string().min(1),
   excerpt: excerptField,
-  bodyMd: z.string().min(1),
+  bodyMd: z.string(),
   categoryIds: categoryIdsField,
   tags: z.string().default("").transform(parseTagNames),
   coverMediaId: coverMediaIdField,
@@ -73,12 +73,23 @@ const assistBodySchema = z.object({ prompt: z.string().trim().min(1).max(4000), 
 const idParamSchema = z.object({ id: z.uuid() });
 
 // Los botones del listado reutilizan las acciones del editor pero vuelven al
-// listado; sólo se admite ese valor para que no sea un redirect abierto.
-const backFieldSchema = z.object({ back: z.literal("list").optional() });
+// listado, y "Publicar ahora" lleva a la publicación; sólo se admiten esos
+// valores y la URL pública se arma acá, para que no sea un redirect abierto.
+const backFieldSchema = z.object({ back: z.enum(["list", "public"]).optional() });
 
-function afterActionPath(body: unknown, id: string): string {
-  const { back } = backFieldSchema.parse(body ?? {});
-  return back === "list" ? "/admin/posts" : `/admin/posts/${id}`;
+async function afterActionPath(request: FastifyRequest, id: string): Promise<string> {
+  const { back } = backFieldSchema.parse(request.body ?? {});
+  if (back === "list") {
+    return "/admin/posts";
+  }
+  if (back === "public") {
+    const post = await getPost(id);
+    const space = post ? await getSpace(post.spaceId) : null;
+    if (post && space) {
+      return `${spaceUrlFor(request, space.subdomain, post.lang)}/${post.slug}`;
+    }
+  }
+  return `/admin/posts/${id}`;
 }
 
 const scheduleFormSchema = z.object({
@@ -230,13 +241,13 @@ export default function postRoutes(fastify: FastifyInstance): void {
   fastify.post<{ Params: { id: string } }>("/:id/publish", async (request, reply) => {
     const { id } = idParamSchema.parse(request.params);
     await publishPost(id);
-    return reply.redirect(afterActionPath(request.body, id));
+    return reply.redirect(await afterActionPath(request, id));
   });
 
   fastify.post<{ Params: { id: string } }>("/:id/unpublish", async (request, reply) => {
     const { id } = idParamSchema.parse(request.params);
     await unpublishPost(id);
-    return reply.redirect(afterActionPath(request.body, id));
+    return reply.redirect(await afterActionPath(request, id));
   });
 
   fastify.post<{ Params: { id: string } }>("/:id/schedule", async (request, reply) => {

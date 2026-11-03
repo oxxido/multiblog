@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { posts } from "../../db/schema.js";
+import { postCategories, postTags, posts } from "../../db/schema.js";
 import { renderMarkdown } from "../../markdown/pipeline.js";
 import { findTranslationSibling } from "../content/posts.js";
 import { translateContent } from "./openrouter.js";
@@ -23,6 +23,7 @@ interface SourcePostRow {
   title: string;
   excerpt: string | null;
   bodyMd: string;
+  coverMediaId: string | null;
 }
 
 async function loadSourcePost(id: string): Promise<SourcePostRow> {
@@ -37,6 +38,7 @@ async function loadSourcePost(id: string): Promise<SourcePostRow> {
       title: posts.title,
       excerpt: posts.excerpt,
       bodyMd: posts.bodyMd,
+      coverMediaId: posts.coverMediaId,
     })
     .from(posts)
     .where(eq(posts.id, id))
@@ -127,27 +129,45 @@ export async function translatePost(originalId: string): Promise<{ id: string }>
 
   const slug = await resolveUniqueSlug(original.spaceId, "en", translated.slug);
 
-  const [row] = await db
-    .insert(posts)
-    .values({
-      spaceId: original.spaceId,
-      lang: "en",
-      translationGroupId: original.translationGroupId,
-      sourcePostId: original.id,
-      translatedAt: now,
-      sourceUpdatedAt: original.updatedAt,
-      slug,
-      title: translated.title,
-      excerpt: translated.excerpt,
-      bodyMd: translated.bodyMd,
-      bodyHtml,
-      status: "draft",
-    })
-    .returning({ id: posts.id });
+  // La traducción nace con los mismos tags, categorías y portada que el
+  // original (mismo espacio, así que las categorías siguen siendo válidas):
+  // antes nacía sin nada y parecía que el guardado los había borrado. Sólo al
+  // crearla; al retraducir no se pisa lo que el autor ajustó en el inglés.
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .insert(posts)
+      .values({
+        spaceId: original.spaceId,
+        lang: "en",
+        translationGroupId: original.translationGroupId,
+        sourcePostId: original.id,
+        translatedAt: now,
+        sourceUpdatedAt: original.updatedAt,
+        slug,
+        title: translated.title,
+        excerpt: translated.excerpt,
+        bodyMd: translated.bodyMd,
+        bodyHtml,
+        coverMediaId: original.coverMediaId,
+        status: "draft",
+      })
+      .returning({ id: posts.id });
 
-  if (!row) {
-    throw new Error("No se pudo crear la traducción");
-  }
+    if (!row) {
+      throw new Error("No se pudo crear la traducción");
+    }
 
-  return { id: row.id };
+    const [categoryRows, tagRows] = await Promise.all([
+      tx.select({ categoryId: postCategories.categoryId }).from(postCategories).where(eq(postCategories.postId, original.id)),
+      tx.select({ tagId: postTags.tagId }).from(postTags).where(eq(postTags.postId, original.id)),
+    ]);
+    if (categoryRows.length > 0) {
+      await tx.insert(postCategories).values(categoryRows.map(({ categoryId }) => ({ postId: row.id, categoryId })));
+    }
+    if (tagRows.length > 0) {
+      await tx.insert(postTags).values(tagRows.map(({ tagId }) => ({ postId: row.id, tagId })));
+    }
+
+    return { id: row.id };
+  });
 }

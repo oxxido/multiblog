@@ -58,7 +58,15 @@
         <textarea class="input" name="excerpt" rows="2"><%= it.post.excerpt ? it.post.excerpt : "" %></textarea>
       </label>
 
-      <div class="banner banner-error" data-editor-error role="alert" hidden><span data-editor-error-text></span></div>
+      <div class="banner banner-error banner-sticky" data-editor-error role="alert" hidden><span data-editor-error-text></span></div>
+      <div class="banner banner-success banner-sticky" data-editor-notice role="status" hidden><span data-editor-notice-text></span></div>
+      <div class="banner banner-warning banner-sticky" data-editor-restore hidden>
+        <span data-editor-restore-text></span>
+        <span class="cluster">
+          <button type="button" class="btn btn-secondary" data-restore-apply>Restaurar</button>
+          <button type="button" class="btn-ghost" data-restore-discard>Descartar</button>
+        </span>
+      </div>
       <div
         class="ai-assist"
         data-ai-assist
@@ -120,7 +128,7 @@
       <div id="editor-visual" data-initial-doc="<%= JSON.stringify(it.initialDoc) %>"></div>
       <label class="field">
         <span class="kicker">Markdown</span>
-        <textarea name="bodyMd" class="input" rows="20" required><%= it.post.bodyMd %></textarea>
+        <textarea name="bodyMd" class="input" rows="20"><%= it.post.bodyMd %></textarea>
         <span class="field-help">Sincronizado con el editor visual en cada cambio.</span>
       </label>
     </form>
@@ -129,21 +137,23 @@
   <aside class="editor-sidebar">
     <div class="card">
       <span class="kicker">Publicación</span>
-      <button class="btn btn-primary btn-block" type="submit" form="post-form">Guardar</button>
+      <button class="btn btn-primary btn-block" type="submit" form="post-form" data-save-button>Guardar</button>
+      <p class="field-help" data-save-status role="status"></p>
     </div>
 
     <div class="card">
-      <form method="post" action="/admin/posts/<%= it.post.id %>/publish">
+      <form method="post" action="/admin/posts/<%= it.post.id %>/publish" data-action-form data-busy-label="Publicando…">
+        <input type="hidden" name="back" value="public" />
         <button class="btn btn-secondary btn-block" type="submit">Publicar ahora</button>
       </form>
       <% if (it.post.status === "published") { %>
-      <form method="post" action="/admin/posts/<%= it.post.id %>/unpublish">
+      <form method="post" action="/admin/posts/<%= it.post.id %>/unpublish" data-action-form data-busy-label="Despublicando…">
         <button class="btn-ghost" type="submit">Despublicar</button>
       </form>
       <% } %>
       <hr class="hr" />
       <span class="kicker">Programar</span>
-      <form method="post" action="/admin/posts/<%= it.post.id %>/schedule">
+      <form method="post" action="/admin/posts/<%= it.post.id %>/schedule" data-action-form data-busy-label="Programando…">
         <input class="input" type="datetime-local" name="publishAt" required />
         <div class="schedule-actions">
           <button class="btn btn-secondary" type="submit">Programar</button>
@@ -188,8 +198,9 @@
 
     <% if (it.post.lang === "es" && it.post.status === "published") { %>
     <div class="card">
-      <form method="post" action="/admin/posts/<%= it.post.id %>/translate">
+      <form method="post" action="/admin/posts/<%= it.post.id %>/translate" data-action-form data-busy-label="Traduciendo…">
         <button class="btn btn-secondary btn-block" type="submit">Traducir al inglés</button>
+        <p class="field-help" data-busy-hint hidden>Puede tardar un minuto. No cierres la página.</p>
       </form>
     </div>
     <% } %>

@@ -19,6 +19,10 @@
   --color-warning-bg: rgba(184, 138, 48, 0.12);
   --color-warning-text: #6b4f1a;
 
+  --color-success-border: #4f8a5b;
+  --color-success-bg: rgba(79, 138, 91, 0.12);
+  --color-success-text: #2f5a39;
+
   --font-heading: "Barlow Condensed", system-ui, sans-serif;
   --font-body: "Barlow", system-ui, sans-serif;
 
@@ -373,6 +377,20 @@ textarea.input:focus {
   border-color: var(--color-warning-border);
   background: var(--color-warning-bg);
   color: var(--color-warning-text);
+}
+.banner-success {
+  border-color: var(--color-success-border);
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+/* Los avisos del editor tienen que verse aunque el post sea largo y la
+   persona esté escribiendo al final: un error fuera de pantalla es un error
+   que no existió. */
+.banner-sticky {
+  position: sticky;
+  top: 8px;
+  z-index: 20;
+  margin-bottom: 12px;
 }
 .banner strong {
   font-weight: 600;
