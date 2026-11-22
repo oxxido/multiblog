@@ -21,21 +21,22 @@ los ajustes posteriores a S11 (D20–D28).
 
 ---
 
-## En curso
+## Slice hecha (código), pendiente de redeploy
 
-**S12 — Analíticas.** Planificación. Esperando del usuario el código de
-integración del sitio creado en `code/analytics`.
+**S12 — Analíticas.** Script de Umami (`analytics.xeedprojects.com`) en el
+`<head>` de todas las páginas públicas (central, espacio, post), salvo la
+vista previa de borradores; el admin no lo lleva. Excepción al invariante 3
+registrada en D29. Se controla con `ANALYTICS_SCRIPT_URL` y
+`ANALYTICS_WEBSITE_ID`; el `docker-compose.yml` trae por defecto los valores
+del sitio de Multiblog, así que el redeploy no necesita tocar el `.env` del
+VPS. Dev y tests no cargan el script. Test: `tests/acceptance/s12.test.ts`.
 
-Decisiones abiertas antes de implementar:
+Pendiente fuera del código:
 
-1. **Invariante 3 (cero JS público).** Si la integración es un `<script>`,
-   hay que elegir entre: rediseñarla sin JS (registro del lado del servidor
-   desde Fastify, o píxel `<img>`), o que el usuario modifique a mano el
-   invariante en `CLAUDE.md` para admitir esa excepción.
-2. **WON'T DO.** "Analytics propio" está descartado en `CLAUDE.md` y
-   `SPEC.md` §1. Si se interpreta como "no construir analíticas dentro de
-   Multiblog", usar un servicio externo no lo contradice; queda registrarlo
-   como decisión (D29).
+- **El usuario actualiza a mano el invariante 3 de `CLAUDE.md`** para
+  reflejar D29 (y, cuando toque, saca "comentarios" de WON'T DO).
+- En Umami, el sitio debe aceptar el apex y todos los subdominios de
+  `neurodivermente.com` (un solo `data-website-id` para todos los espacios).
 
 ## Próxima
 

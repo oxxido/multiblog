@@ -6,6 +6,8 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   MEDIA_DIR: z.string().min(1).default("./data/media"),
   OPENROUTER_API_KEY: z.string().min(1).optional(),
+  ANALYTICS_SCRIPT_URL: z.url().optional(),
+  ANALYTICS_WEBSITE_ID: z.uuid().optional(),
 });
 
 export const env = envSchema.parse(process.env);

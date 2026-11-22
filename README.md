@@ -8,7 +8,7 @@ midominio.com             sitio central: todos los espacios, últimos posts, tag
 midominio.com/admin       panel de administración
 ```
 
-Un autor, un proceso Node, una base de datos. Sin SPA: el sitio público se renderiza en el servidor y **no envía nada de JavaScript**.
+Un autor, un proceso Node, una base de datos. Sin SPA: el sitio público se renderiza en el servidor y **no envía JavaScript propio**: la única excepción es el script de analíticas (Umami).
 
 ## Para qué sirve
 
@@ -25,7 +25,7 @@ Para escribir sobre cosas distintas sin mezclarlas. Cocina, código y notas pers
 - **Barra de compartir** en cada post, sin JavaScript.
 - **Importar y exportar** un espacio como carpeta de archivos Markdown.
 
-Lo que **no** hace, a propósito: comentarios, múltiples usuarios, newsletter, analíticas, temas intercambiables, plugins ni búsqueda.
+Lo que **no** hace, a propósito: comentarios, múltiples usuarios, newsletter, analíticas propias, temas intercambiables, plugins ni búsqueda.
 
 ## Stack
 
@@ -102,6 +102,7 @@ Para probar todo el stack en tu máquina, `docker compose --profile local-caddy 
 | `PORT` | no | puerto de la app (3000 por defecto) |
 | `MEDIA_DIR` | no | dónde se guardan las imágenes (`./data/media`) |
 | `OPENROUTER_API_KEY` | para traducir | clave de OpenRouter |
+| `ANALYTICS_SCRIPT_URL`, `ANALYTICS_WEBSITE_ID` | no | script y sitio de Umami; sin ambas no se inserta el script (el compose de producción trae los valores por defecto) |
 
 ## Comandos
 

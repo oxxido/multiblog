@@ -3,6 +3,7 @@
   <head>
     <%~ include("partials/head", {
       title: it.title,
+      analytics: it.previewNotice ? null : it.analytics,
       canonical: it.canonical,
       alternates: it.alternates,
       ogType: it.ogType,

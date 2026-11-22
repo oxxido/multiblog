@@ -21,6 +21,14 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(fastifyView, {
     engine: { eta: new Eta() },
     templates: path.join(process.cwd(), "src/views"),
+    // Única excepción al "cero JS" del sitio público (D29). Sin las dos
+    // variables no se emite nada: dev y tests no le mandan visitas a Umami.
+    defaultContext: {
+      analytics:
+        env.ANALYTICS_SCRIPT_URL && env.ANALYTICS_WEBSITE_ID
+          ? { scriptUrl: env.ANALYTICS_SCRIPT_URL, websiteId: env.ANALYTICS_WEBSITE_ID }
+          : null,
+    },
   });
 
   await app.register(fastifyCookie);
