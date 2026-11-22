@@ -19,7 +19,7 @@ export interface PostSummary {
   updatedAt: Date;
   lang: "es" | "en";
   // Verdadero cuando el original de esta traducción se editó después de la
-  // última corrida del traductor (docs/slices/08.md T6): "editar el original
+  // última corrida del traductor (docs/archive/v1/slices/08.md T6): "editar el original
   // en silencio no desactualiza en silencio la traducción".
   isStale: boolean;
 }
@@ -58,7 +58,7 @@ export interface PostInput {
 // Sólo asocia categorías del mismo espacio que el post (invariante 2): una
 // categoría tildada que pertenece a otro espacio se descarta en silencio en
 // vez de romper el guardado, porque el formulario de post no filtra las
-// categorías por espacio antes de enviarlas (docs/slices/03.md §0).
+// categorías por espacio antes de enviarlas (docs/archive/v1/slices/03.md §0).
 async function syncPostCategories(
   executor: Executor,
   postId: string,
@@ -235,7 +235,7 @@ export async function updatePost(id: string, input: PostInput): Promise<void> {
 // Mismo alcance que ya tenía el botón "Guardar" de S2/S3 sobre el cuerpo
 // (también reescribe body_html sin mirar status): el autosave lo hace
 // automático, no le suma un riesgo nuevo. Nunca toca slug, title, status ni
-// categorías (docs/slices/05.md §0).
+// categorías (docs/archive/v1/slices/05.md §0).
 export async function autosavePostBody(id: string, bodyMd: string): Promise<void> {
   const bodyHtml = await renderMarkdown(bodyMd);
   await db.update(posts).set({ bodyMd, bodyHtml, updatedAt: new Date() }).where(eq(posts.id, id));
@@ -255,7 +255,7 @@ export async function unpublishPost(id: string): Promise<void> {
 }
 
 // "Publicar ya" (publishPost) y "programar" son acciones separadas
-// (docs/slices/10.md §0): programar deja status = "scheduled" y es
+// (docs/archive/v1/slices/10.md §0): programar deja status = "scheduled" y es
 // publishDuePosts (scheduler.ts), no este módulo, quien lo pasa a
 // "published" cuando llega la fecha.
 export async function schedulePost(id: string, publishAt: Date): Promise<void> {
@@ -272,7 +272,7 @@ export async function deletePost(id: string): Promise<void> {
 
 const WORDS_PER_MINUTE = 200;
 
-// Palabras / 200, redondeado hacia arriba, mínimo 1 (docs/slices/04.md §0):
+// Palabras / 200, redondeado hacia arriba, mínimo 1 (docs/archive/v1/slices/04.md §0):
 // no se guarda en la base, se deriva de body_md en cada lectura.
 function computeReadingMinutes(bodyMd: string): number {
   const words = bodyMd.trim().split(/\s+/).filter(Boolean).length;
@@ -304,7 +304,7 @@ export interface PublishedPostView {
   readingMinutes: number;
   // Un post puede tener varias categorías (N a N); se muestra la primera
   // que devuelva la consulta, sin concepto de "categoría principal"
-  // (docs/slices/04.md §0).
+  // (docs/archive/v1/slices/04.md §0).
   category: PostCategoryRef | null;
   tags: PostTagRef[];
   prev: AdjacentPostRef | null;
@@ -419,7 +419,7 @@ export interface PreviewPostView {
 
 // Vista previa de un borrador (o de un post programado) por token, sin
 // filtrar por lang (el token ya identifica un post concreto con su propio
-// idioma, docs/slices/10.md §0). Filtra por spaceId además del token
+// idioma, docs/archive/v1/slices/10.md §0). Filtra por spaceId además del token
 // (invariante 2), no porque el UUID sea adivinable.
 export async function findPostByPreviewToken(spaceId: string, token: string): Promise<PreviewPostView | null> {
   const [row] = await db
@@ -473,7 +473,7 @@ export async function findPostByPreviewToken(spaceId: string, token: string): Pr
   };
 }
 
-// La única forma de invalidar un link de vista previa viejo (docs/slices/10.md
+// La única forma de invalidar un link de vista previa viejo (docs/archive/v1/slices/10.md
 // §0): sin expiración automática.
 export async function rotatePreviewToken(id: string): Promise<string> {
   const [row] = await db
@@ -495,7 +495,7 @@ export interface PublishedTranslationSibling {
 }
 
 // El hermano publicado del otro idioma dentro del mismo grupo, para armar
-// hreflang/canonical/x-default en el sitio público (docs/slices/08.md T8).
+// hreflang/canonical/x-default en el sitio público (docs/archive/v1/slices/08.md T8).
 // A diferencia de findTranslationSibling (admin), acá sólo interesa un
 // hermano que ya sea visible al público.
 export async function findPublishedTranslationSibling(
@@ -538,7 +538,7 @@ interface PublishedPostRow {
 
 // La categoría es N a N (post_categories); para no pagar un lookup por fila
 // se trae en un solo IN() y se queda con la primera que aparezca por post,
-// mismo criterio "sin orden declarado" que findPublishedPost (docs/slices/04.md §0).
+// mismo criterio "sin orden declarado" que findPublishedPost (docs/archive/v1/slices/04.md §0).
 async function firstCategoriesByPostId(postIds: string[]): Promise<Map<string, PostCategoryRef>> {
   if (postIds.length === 0) {
     return new Map();
@@ -560,7 +560,7 @@ async function firstCategoriesByPostId(postIds: string[]): Promise<Map<string, P
 }
 
 // Recibe PAGE_SIZE + 1 filas (así se sabe si hay página siguiente sin un
-// segundo COUNT(*), docs/slices/03.md §0) y descarta la de más.
+// segundo COUNT(*), docs/archive/v1/slices/03.md §0) y descarta la de más.
 async function toPostPage(rows: PublishedPostRow[]): Promise<PostPage> {
   const hasNext = rows.length > PAGE_SIZE;
   const pageRows = rows.slice(0, PAGE_SIZE);
@@ -745,7 +745,7 @@ export interface FeedPostItem {
   publishedAt: Date;
 }
 
-// Sin paginar (docs/slices/09.md T5): un límite fijo, mismo criterio que el
+// Sin paginar (docs/archive/v1/slices/09.md T5): un límite fijo, mismo criterio que el
 // resto de los listados de este módulo.
 const FEED_POST_LIMIT = 50;
 
@@ -801,7 +801,7 @@ export interface PostExportItem {
 
 // Sin filtro de status, a diferencia de todo el resto del módulo (que sólo
 // expone publicado): es la herramienta de respaldo/portabilidad completa
-// (docs/slices/10.md §0), incluye borradores y programados.
+// (docs/archive/v1/slices/10.md §0), incluye borradores y programados.
 const EXPORT_POST_LIMIT = 2000;
 
 async function categorySlugsByPostId(postIds: string[]): Promise<Map<string, string[]>> {

@@ -16,7 +16,7 @@ export function getBlock(name: string): BlockDefinition | undefined {
 
 // Atributos de una directiva vienen del texto del autor: pueden faltar o no
 // validar. Un atributo inválido no rompe el render del resto del post — el
-// bloque entero cae a sus valores por defecto (docs/slices/06.md §0). Un
+// bloque entero cae a sus valores por defecto (docs/archive/v1/slices/06.md §0). Un
 // bloque no registrado sí es un error real: es contenido que el registro no
 // sabe interpretar, no un dato de usuario mal escrito.
 export function resolveBlock(node: DirectiveNode): { block: BlockDefinition; attrs: unknown } {

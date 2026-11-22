@@ -44,7 +44,7 @@ function toTiptapDoc(json: ReturnType<Editor["getJSON"]>): TiptapDoc {
 }
 
 // Las dos etiquetas ("Visual"/"Markdown") son marcado fijo del botón
-// (docs/slices/11.md T6, admin.css .seg-toggle); esta función sólo mueve el
+// (docs/archive/v1/slices/11.md T6, admin.css .seg-toggle); esta función sólo mueve el
 // resaltado cambiando data-mode, ya no reescribe textContent.
 function setMode(mode: Mode, elements: EditorElements): void {
   const isVisual = mode === "visual";
@@ -138,7 +138,7 @@ interface AutosaveHooks {
   onError: (message: string) => void;
 }
 
-// POST/:id/autosave sólo toca body_md/body_html (docs/slices/05.md §0): acá
+// POST/:id/autosave sólo toca body_md/body_html (docs/archive/v1/slices/05.md §0): acá
 // no hay slug, title, status ni categorías que mandar, sólo el Markdown
 // vigente en el modo que esté activo.
 function scheduleAutosave(
@@ -181,7 +181,7 @@ function scheduleAutosave(
 }
 
 // Extrae el id de video de un id suelto o de las formas de URL más comunes
-// de YouTube — el autor puede pegar cualquiera de las dos (docs/slices/06.md
+// de YouTube — el autor puede pegar cualquiera de las dos (docs/archive/v1/slices/06.md
 // §0). Si no matchea ningún patrón conocido, se asume que ya es el id.
 function extractYoutubeId(input: string): string {
   const trimmed = input.trim();
@@ -207,7 +207,7 @@ function insertBlockAtEnd(editor: Editor, node: Record<string, unknown>): void {
 }
 
 // La validación real de los atributos es la de Zod en el registro, del lado
-// servidor, al guardar (docs/slices/06.md §0) — acá sólo se evita insertar
+// servidor, al guardar (docs/archive/v1/slices/06.md §0) — acá sólo se evita insertar
 // nada si el prompt vuelve vacío o cancelado.
 function insertCallout(editor: Editor): void {
   const type = window.prompt("Tipo de callout (info, warning o success):", "info");
@@ -451,7 +451,7 @@ function revealMarkdownFallback(): void {
 }
 
 // Alternar no cambia qué envía el <form>: el textarea con name="bodyMd"
-// sigue siendo el campo real (docs/slices/05.md §0). Este módulo lo mantiene
+// sigue siendo el campo real (docs/archive/v1/slices/05.md §0). Este módulo lo mantiene
 // sincronizado con lo que la persona ve y respalda el borrador en el
 // navegador: lo escrito nunca depende de que el servidor o este script
 // respondan bien.

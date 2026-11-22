@@ -1,4 +1,4 @@
-<% /* Cabecera + sidebar compartida del admin (docs/slices/11.md T3).
+<% /* Cabecera + sidebar compartida del admin (docs/archive/v1/slices/11.md T3).
    Parámetros: title (string), currentPath/activeSpaces (de reply.locals,
    reenviados explícitos porque include() no hereda el `it` del padre). */ %>
 <% const path = it.currentPath || ""; %>

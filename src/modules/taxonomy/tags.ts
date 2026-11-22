@@ -12,7 +12,7 @@ export function slugifyTagName(name: string): string {
 }
 
 // Coma-separado, recorta espacios, descarta vacíos, dedupe case-insensitive
-// preservando el primer casing con el que apareció (docs/slices/09.md §0).
+// preservando el primer casing con el que apareció (docs/archive/v1/slices/09.md §0).
 export function parseTagNames(raw: string): string[] {
   const seen = new Set<string>();
   const names: string[] = [];

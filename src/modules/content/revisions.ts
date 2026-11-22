@@ -6,7 +6,7 @@ import { postRevisions } from "../../db/schema.js";
 const REVISION_LIST_LIMIT = 200;
 
 // Sólo en el guardado explícito del formulario completo, nunca en el
-// autosave de S5 (docs/slices/10.md §0): evita cientos de filas por sesión
+// autosave de S5 (docs/archive/v1/slices/10.md §0): evita cientos de filas por sesión
 // de escritura. No inserta si body_md no cambió contra la última revisión
 // guardada (o contra "ninguna" en el primer guardado real de un post recién
 // creado).
@@ -65,7 +65,7 @@ function escapeHtml(text: string): string {
 }
 
 // Diff de líneas en texto plano, sólo contra la revisión inmediatamente
-// anterior (docs/slices/10.md §0): null si es la primera revisión del post,
+// anterior (docs/archive/v1/slices/10.md §0): null si es la primera revisión del post,
 // no hay "anterior" contra la que comparar.
 export async function diffAgainstPrevious(revisionId: string): Promise<string | null> {
   const revision = await getRevision(revisionId);

@@ -46,7 +46,7 @@ const coverMediaIdField = z.preprocess(
   z.uuid().nullable(),
 );
 
-// Paso mínimo de creación (T5 de docs/slices/05.md): sin cuerpo ni
+// Paso mínimo de creación (T5 de docs/archive/v1/slices/05.md): sin cuerpo ni
 // categorías todavía. El post se crea con body_md vacío y se termina de
 // escribir en /admin/posts/{id}, que ya es la pantalla de edición completa.
 const newPostFormSchema = z.object({
@@ -188,13 +188,13 @@ export default function postRoutes(fastify: FastifyInstance): void {
 
     const { tags: tagNames, ...rest } = parsed.data;
     await updatePost(id, { ...rest, tagNames });
-    // Sólo acá, nunca en /autosave (§0 de docs/slices/10.md): una revisión
+    // Sólo acá, nunca en /autosave (§0 de docs/archive/v1/slices/10.md): una revisión
     // por guardado explícito del formulario completo, si el cuerpo cambió.
     await recordRevisionIfChanged(id, rest.bodyMd);
     return reply.redirect(`/admin/posts/${id}`);
   });
 
-  // Sólo toca body_md/body_html/updated_at (§0 de docs/slices/05.md): nunca
+  // Sólo toca body_md/body_html/updated_at (§0 de docs/archive/v1/slices/05.md): nunca
   // slug, title, status ni categorías, para que el autosave no pueda
   // publicar ni renombrar nada por accidente.
   fastify.post<{ Params: { id: string } }>("/:id/autosave", async (request, reply) => {

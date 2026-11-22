@@ -8,7 +8,7 @@ import { buildResponsiveImage, parseMediaUrl } from "../modules/media/derivative
 // `gallery.ts` (T7) arma su propio `<figure>` a mano y nunca pasa sus
 // imágenes por el handler por defecto de mdast-util-to-hast, así que
 // necesita las dimensiones resueltas por su cuenta, sin volver a consultar
-// la base (docs/slices/07.md §0).
+// la base (docs/archive/v1/slices/07.md §0).
 declare module "mdast" {
   interface Data {
     mediaImage?: { width: number; height: number };
@@ -28,7 +28,7 @@ function isImage(node: unknown): node is Image {
 }
 
 // Recorrida manual de ~10 líneas (sin sumar unist-util-visit como
-// dependencia, docs/slices/07.md §0): entra también a los hijos de un
+// dependencia, docs/archive/v1/slices/07.md §0): entra también a los hijos de un
 // containerDirective (callout, gallery) porque en esta etapa del pipeline
 // la directiva todavía no se convirtió a hast, sus hijos son mdast común.
 function collectImages(node: unknown, images: Image[]): void {
@@ -101,7 +101,7 @@ const remarkMediaImages: Plugin<[], Root> = function remarkMediaImages() {
     }
     // Una URL que matchea pero cuya fila ya no existe (borrada) no aparece
     // en `rows`: la imagen queda como un `<img src alt>` liso, sin romper el
-    // resto del post (docs/slices/07.md §0).
+    // resto del post (docs/archive/v1/slices/07.md §0).
   };
 };
 

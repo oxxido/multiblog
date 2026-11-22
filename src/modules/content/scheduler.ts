@@ -4,7 +4,7 @@ import { posts } from "../../db/schema.js";
 
 // No toca published_at: un post `scheduled` ya lo tiene (la fecha
 // programada), que pasa a ser la fecha real de publicación sin más ajuste
-// (docs/slices/10.md §0).
+// (docs/archive/v1/slices/10.md §0).
 export async function publishDuePosts(): Promise<number> {
   const rows = await db
     .update(posts)

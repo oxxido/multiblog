@@ -54,7 +54,7 @@ export interface FeedCrossSpaceItem extends CrossSpaceLatestItem {
   bodyHtml: string;
 }
 
-// Sin paginar (docs/slices/09.md T5): un límite fijo, mismo criterio que el
+// Sin paginar (docs/archive/v1/slices/09.md T5): un límite fijo, mismo criterio que el
 // resto de los listados de este módulo.
 const FEED_LATEST_LIMIT = 50;
 

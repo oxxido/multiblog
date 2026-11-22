@@ -1,5 +1,5 @@
 // Formato propio, no YAML: sólo lo escribe y lo lee esta herramienta
-// (docs/slices/10.md §0), así que no hace falta un parser general. Puro
+// (docs/archive/v1/slices/10.md §0), así que no hace falta un parser general. Puro
 // texto adentro, puro texto afuera, sin I/O ni dependencia de la base, para
 // poder testearlo sin Postgres (mismo motivo que derivatives.ts en S7).
 

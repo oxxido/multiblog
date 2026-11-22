@@ -15,7 +15,7 @@ interface GalleryImage {
   alt: string;
   // Presente sólo cuando la imagen es de la biblioteca y el plugin remark
   // de T6 (mediaImages.ts) ya la resolvió contra `media`: una URL externa
-  // nunca lo tiene (docs/slices/07.md §0).
+  // nunca lo tiene (docs/archive/v1/slices/07.md §0).
   mediaImage?: { width: number; height: number };
 }
 
@@ -33,7 +33,7 @@ function corners(): Element[] {
 
 // Con dimensiones reales (imagen de biblioteca, T6 ya la resolvió) arma
 // srcset/width/height/loading con el mismo helper puro que usa el plugin de
-// imágenes del cuerpo, no una copia de la lógica (docs/slices/07.md §0). Una
+// imágenes del cuerpo, no una copia de la lógica (docs/archive/v1/slices/07.md §0). Una
 // imagen externa sigue sin srcset, como hasta ahora.
 function imageProperties(image: GalleryImage): Properties {
   const id = image.mediaImage ? parseMediaUrl(image.src) : null;
@@ -76,7 +76,7 @@ function frame(image: GalleryImage): Element {
 
 // Markdown estándar pone cada `![]()` suelto en su propio párrafo; extraer
 // las imágenes es ignorar esos párrafos envolventes, no una sintaxis nueva
-// (docs/slices/06.md §0). No depende de que exista biblioteca de medios
+// (docs/archive/v1/slices/06.md §0). No depende de que exista biblioteca de medios
 // (S7): cualquier URL de imagen sirve, igual que hoy fuera de un `gallery`.
 function extractImages(node: DirectiveNode): GalleryImage[] {
   const images: GalleryImage[] = [];

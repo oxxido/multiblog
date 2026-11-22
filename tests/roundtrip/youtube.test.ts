@@ -8,7 +8,7 @@ test("youtube con título sobrevive el viaje completo", () => {
   assert.equal(toMarkdown(fromMarkdown(md)), md);
 });
 
-// Un `title` vacío no valida (docs/slices/06.md §0: min(1)) y cae al valor
+// Un `title` vacío no valida (docs/archive/v1/slices/06.md §0: min(1)) y cae al valor
 // por defecto.
 test("un title vacío cae al valor por defecto", () => {
   const md = '::youtube[dQw4w9WgXcQ]{title=""}\n';

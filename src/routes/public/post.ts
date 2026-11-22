@@ -52,7 +52,7 @@ export default function postRoutes(lang: "es" | "en") {
         alternates.push({ hreflang: sibling.lang, href: siblingHref });
       }
       // x-default apunta siempre a la versión en español, sea el post actual
-      // o su hermano (docs/slices/08.md §0).
+      // o su hermano (docs/archive/v1/slices/08.md §0).
       const spanishHref = lang === "es" ? canonical : sibling?.lang === "es" && siblingHref ? siblingHref : canonical;
       alternates.push({ hreflang: "x-default", href: spanishHref });
 

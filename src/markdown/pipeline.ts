@@ -18,7 +18,7 @@ import "./blocks/index.js";
 // el resto de sus atributos (`width`, `height`, `title`) ya están en la
 // lista `*`, y `src` hereda la restricción de protocolo http/https que
 // rehype-sanitize ya aplica por defecto a esa propiedad. `img` gana
-// `srcset`/`loading` (S7, docs/slices/07.md §0): `alt`/`width`/`height` ya
+// `srcset`/`loading` (S7, docs/archive/v1/slices/07.md §0): `alt`/`width`/`height` ya
 // están en la lista `*`.
 const schema: Schema = {
   ...defaultSchema,

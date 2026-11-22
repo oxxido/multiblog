@@ -10,7 +10,7 @@ export type DirectiveType = "containerDirective" | "leafDirective" | "textDirect
 
 export type DirectiveNode = ContainerDirective | LeafDirective | TextDirective;
 
-// Forma pública de un bloque rico (docs/DECISIONS.md, docs/slices/06.md §0):
+// Forma pública de un bloque rico (docs/DECISIONS.md, docs/archive/v1/slices/06.md §0):
 // nombre, atributos validados con Zod, conversión a hast (una sola pasada de
 // saneado con el resto del documento, de ahí que el `render` del pseudocódigo
 // de SPEC.md §3 sea acá un handler de mdast-util-to-hast), nodo TipTap y

@@ -4,6 +4,10 @@
 > precisan. `SPEC.md` y `PLAN.md` no se reescriben en su prosa de origen salvo
 > que la decisión cambie el stack o el plan mismos (como D1); todo lo demás
 > vive acá. Ante una duda, esta tabla manda sobre el documento original.
+>
+> Con el cierre de la v1, el `PLAN.md` original, `STATUS.md` de la v1,
+> `docs/slices/01.md`–`11.md` y `docs/UI_mockups/` se movieron a
+> `docs/archive/v1/`. Las referencias de abajo a esos archivos apuntan ahí.
 
 | # | Decisión | Slice | Reemplaza / precisa |
 |---|---|---|---|

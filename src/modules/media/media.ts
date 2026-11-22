@@ -13,7 +13,7 @@ const ACCEPTED_MIME_TO_EXT: Record<string, string> = {
   "image/webp": "webp",
 };
 
-// Constante de código, no env (docs/slices/07.md §0): no hay necesidad de
+// Constante de código, no env (docs/archive/v1/slices/07.md §0): no hay necesidad de
 // que varíe por entorno.
 const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 
@@ -123,7 +123,7 @@ export interface MediaUsage {
   label: string;
 }
 
-// Dos tipos de uso (docs/slices/07.md §0): estructurado (cover_media_id de
+// Dos tipos de uso (docs/archive/v1/slices/07.md §0): estructurado (cover_media_id de
 // posts/spaces/site_settings) y por texto (una imagen suelta en el cuerpo o
 // dentro de un gallery no deja ninguna fila de relación, sólo la URL cruda
 // en body_md).
