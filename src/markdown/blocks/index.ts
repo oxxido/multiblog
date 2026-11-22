@@ -7,7 +7,7 @@ import { youtubeBlock } from "./youtube.js";
 // esta slice (efecto de módulo, se ejecuta una vez por proceso) y expone la
 // lista de sus nodos TipTap para src/markdown/tiptap/extensions.ts. Un
 // bloque nuevo agrega su archivo y una línea acá — no toca pipeline.ts,
-// toHast.ts ni fromMarkdown.ts/toMarkdown.ts (docs/slices/06.md §4).
+// toHast.ts ni fromMarkdown.ts/toMarkdown.ts (docs/archive/v1/slices/06.md §4).
 registerBlock(calloutBlock);
 registerBlock(galleryBlock);
 registerBlock(youtubeBlock);

@@ -105,7 +105,7 @@ export interface SpaceNavItem {
   accentColor: string | null;
 }
 
-// Sidebar del admin (docs/slices/11.md T2): sólo espacios activos, mismo
+// Sidebar del admin (docs/archive/v1/slices/11.md T2): sólo espacios activos, mismo
 // límite que el resto de los listados del panel.
 export async function listActiveSpacesForNav(): Promise<SpaceNavItem[]> {
   return db

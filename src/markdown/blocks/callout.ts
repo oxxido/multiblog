@@ -9,7 +9,7 @@ const calloutAttrsSchema = z.object({
 type CalloutAttrs = z.infer<typeof calloutAttrsSchema>;
 
 // Design.md §3.6 no fija copy de etiqueta por tipo, sólo "versalitas 11"
-// (docs/slices/06.md §0): se decide acá, no hay otro lugar donde vivir.
+// (docs/archive/v1/slices/06.md §0): se decide acá, no hay otro lugar donde vivir.
 const CALLOUT_LABELS: Record<CalloutAttrs["type"], string> = {
   info: "Nota",
   warning: "Atención",
@@ -18,7 +18,7 @@ const CALLOUT_LABELS: Record<CalloutAttrs["type"], string> = {
 
 // `content: "paragraph+"` reutiliza el nodo `paragraph` que T1 de S5 ya
 // convierte — ningún tipo de nodo nuevo dentro del contenido
-// (docs/slices/06.md §0). `renderHTML` alcanza para que el editor visual
+// (docs/archive/v1/slices/06.md §0). `renderHTML` alcanza para que el editor visual
 // pueda montar el nodo; el selector de `type` en la barra de herramientas es
 // una NodeView que agrega src/admin-client/editor.ts (T4), sin tocar este
 // esquema base.

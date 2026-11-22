@@ -3,6 +3,7 @@
   <head>
     <%~ include("partials/head", {
       title: `${it.heading} · ${it.spaceName}`,
+      analytics: it.analytics,
       canonical: it.canonical,
       ogType: it.ogType,
       ogTitle: it.ogTitle,

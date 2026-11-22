@@ -20,6 +20,8 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-multiblog}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-multiblog}
       MEDIA_DIR: /data/media
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      ANALYTICS_SCRIPT_URL: ${ANALYTICS_SCRIPT_URL:-https://analytics.xeedprojects.com/script.js}
+      ANALYTICS_WEBSITE_ID: ${ANALYTICS_WEBSITE_ID:-9baeb431-044a-48a8-ba2a-daf9e2e19a73}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     volumes:

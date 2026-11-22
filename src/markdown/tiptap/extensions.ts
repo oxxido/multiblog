@@ -9,7 +9,7 @@ import { imageNode } from "./imageNode.js";
 import { blockTiptapNodes } from "../blocks/index.js";
 
 // Único lugar donde se listan los nodos/marcas del editor visual (párrafo,
-// encabezado, lista, enlace, código, cita, tabla — docs/slices/05.md §0; más
+// encabezado, lista, enlace, código, cita, tabla — docs/archive/v1/slices/05.md §0; más
 // los bloques ricos de S6). El cliente (src/admin-client/editor.ts) y el
 // conversor (fromMarkdown/toMarkdown) importan esta misma lista: un nombre
 // de nodo que no coincide entre los dos lados falla acá, en un solo lugar,

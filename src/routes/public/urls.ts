@@ -33,7 +33,7 @@ export function postAbsoluteUrlFor(
 }
 
 // Sin prefijo de idioma (a diferencia de postAbsoluteUrlFor): el token ya
-// identifica un post concreto con su propio lang (docs/slices/10.md §0).
+// identifica un post concreto con su propio lang (docs/archive/v1/slices/10.md §0).
 export function previewUrlFor(request: FastifyRequest, subdomain: string, token: string): string {
   return `${request.protocol}://${subdomain}.${env.BASE_DOMAIN}${portSuffix(request)}/_preview/${token}`;
 }

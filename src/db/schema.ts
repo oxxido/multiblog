@@ -145,7 +145,7 @@ export const postTags = pgTable(
 );
 
 // Una fila por guardado explícito del formulario completo que cambió
-// body_md (nunca desde el autosave, docs/slices/10.md §0): el historial que
+// body_md (nunca desde el autosave, docs/archive/v1/slices/10.md §0): el historial que
 // el admin compara contra la revisión inmediata anterior.
 export const postRevisions = pgTable(
   "post_revisions",
@@ -176,7 +176,7 @@ export const sessions = pgTable("sessions", {
 });
 
 // Fila única (id fijo = 1), sembrada por seed.ts igual que espacios/usuario
-// (docs/slices/07.md §0): la cabecera a sangre del sitio central necesita
+// (docs/archive/v1/slices/07.md §0): la cabecera a sangre del sitio central necesita
 // una foto propia que no pertenece a ningún espacio ni post.
 export const siteSettings = pgTable("site_settings", {
   id: integer("id").primaryKey().default(1),

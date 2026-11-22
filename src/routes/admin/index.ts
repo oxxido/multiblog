@@ -11,7 +11,7 @@ import mediaRoutes from "./media.js";
 import siteRoutes from "./site.js";
 
 // @fastify/view mezcla reply.locals con los datos de cada reply.view() en
-// tiempo de ejecución, pero no lo tipa (docs/slices/11.md T2).
+// tiempo de ejecución, pero no lo tipa (docs/archive/v1/slices/11.md T2).
 declare module "fastify" {
   interface FastifyReply {
     locals: {
@@ -29,7 +29,7 @@ export default async function adminRoutes(fastify: FastifyInstance): Promise<voi
   await fastify.register(async (protectedScope) => {
     protectedScope.addHook("onRequest", requireSession);
 
-    // Sidebar compartida por todas las vistas del admin (docs/slices/11.md
+    // Sidebar compartida por todas las vistas del admin (docs/archive/v1/slices/11.md
     // T2): @fastify/view mezcla reply.locals con lo que cada ruta le pasa a
     // reply.view(), así que esto no requiere tocar cada manejador.
     protectedScope.addHook("onRequest", async (request, reply) => {

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 // pipeline.ts pasa a depender de la base desde S7 (el plugin de imágenes,
-// docs/slices/07.md §0): sólo consulta si el documento referencia /media/,
+// docs/archive/v1/slices/07.md §0): sólo consulta si el documento referencia /media/,
 // pero el cliente de src/db/client.ts se construye al importar el módulo y
 // necesita un DATABASE_URL sintácticamente válido para eso, aunque ningún
 // test de este archivo llegue a ejecutar una query real.

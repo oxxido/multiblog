@@ -12,7 +12,7 @@ test("gallery con varias imágenes y alt sobrevive el viaje completo", () => {
   assert.equal(toMarkdown(fromMarkdown(md)), md);
 });
 
-// Un `cols` que no valida (docs/slices/06.md §0) cae a su valor por defecto
+// Un `cols` que no valida (docs/archive/v1/slices/06.md §0) cae a su valor por defecto
 // (2) en vez de romper la conversión.
 test("un cols inválido cae al valor por defecto", () => {
   const md = ':::gallery{cols="9"}\n![Foto](https://example.com/a.jpg)\n:::\n';

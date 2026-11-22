@@ -119,7 +119,7 @@ interface UpsertResult {
 }
 
 // Mismo criterio de upsert por (espacio, lang, slug) para archivo nuevo o ya
-// importado antes (docs/slices/10.md §0): una reimportación después de
+// importado antes (docs/archive/v1/slices/10.md §0): una reimportación después de
 // vaciar la base y una carga incremental usan el mismo camino.
 async function upsertPostFile(
   spaceId: string,
@@ -207,7 +207,7 @@ export interface ImportSummary {
   updated: number;
 }
 
-// Lee es/ y recién después en/ (docs/slices/10.md §0): translation_of de un
+// Lee es/ y recién después en/ (docs/archive/v1/slices/10.md §0): translation_of de un
 // archivo de en/ se resuelve contra los slugs de es/ ya importados en esta
 // misma corrida, no contra la base entera.
 export async function importSpaceFromDirectory(spaceSlug: string, dir: string): Promise<ImportSummary> {
@@ -254,7 +254,7 @@ export interface ExportSummary {
   exported: number;
 }
 
-// Un archivo por post en {dir}/{lang}/{slug}.md (docs/slices/10.md §0):
+// Un archivo por post en {dir}/{lang}/{slug}.md (docs/archive/v1/slices/10.md §0):
 // completo, incluye borradores y programados, no sólo publicados.
 export async function exportSpaceToDirectory(spaceSlug: string, dir: string): Promise<ExportSummary> {
   const spaceId = await findSpaceIdBySlug(spaceSlug);

@@ -9,7 +9,7 @@ const youtubeAttrsSchema = z.object({
 type YoutubeAttrs = z.infer<typeof youtubeAttrsSchema>;
 
 // `youtube` no tiene hijos: el id viene del `label` de la directiva
-// (`::youtube[id]`), no de un atributo (docs/slices/06.md §0) — remark-directive
+// (`::youtube[id]`), no de un atributo (docs/archive/v1/slices/06.md §0) — remark-directive
 // lo entrega como el único hijo de texto de la directiva leaf.
 function extractVideoId(node: DirectiveNode): string {
   const first = node.children[0];
@@ -18,7 +18,7 @@ function extractVideoId(node: DirectiveNode): string {
 
 // Tarjeta de verificación en vez de iframe embebido: el autor ve el id y un
 // enlace a youtube.com sin cargar un documento de terceros dentro del propio
-// editor (docs/slices/06.md §0).
+// editor (docs/archive/v1/slices/06.md §0).
 const youtubeTiptapNode = Node.create({
   name: "youtube",
   group: "block",

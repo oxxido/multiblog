@@ -13,7 +13,7 @@ test("callout con varios párrafos sobrevive el viaje completo", () => {
   assert.equal(toMarkdown(fromMarkdown(md)), md);
 });
 
-// Un `type` que no valida (docs/slices/06.md §0) cae a su valor por
+// Un `type` que no valida (docs/archive/v1/slices/06.md §0) cae a su valor por
 // defecto ("info") en vez de romper la conversión — su forma canónica ya
 // no es la de entrada.
 test("un type inválido cae al valor por defecto", () => {

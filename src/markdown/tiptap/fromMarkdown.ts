@@ -21,7 +21,7 @@ import { resolveBlock } from "../blocks/registry.js";
 const parser = unified().use(remarkParse).use(remarkGfm).use(remarkDirective);
 
 // mdast → documento TipTap. Cubre los siete tipos de nodo base de
-// docs/slices/05.md §0 (párrafo, encabezado, lista, enlace, código, cita,
+// docs/archive/v1/slices/05.md §0 (párrafo, encabezado, lista, enlace, código, cita,
 // tabla) más negrita/itálica/código en línea, y delega los bloques ricos de
 // S6 (`containerDirective`/`leafDirective`) al registro — un bloque nuevo no
 // toca este archivo. Cualquier otra sintaxis no se descarta en silencio:

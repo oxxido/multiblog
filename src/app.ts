@@ -21,6 +21,14 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(fastifyView, {
     engine: { eta: new Eta() },
     templates: path.join(process.cwd(), "src/views"),
+    // Única excepción al "cero JS" del sitio público (D29). Sin las dos
+    // variables no se emite nada: dev y tests no le mandan visitas a Umami.
+    defaultContext: {
+      analytics:
+        env.ANALYTICS_SCRIPT_URL && env.ANALYTICS_WEBSITE_ID
+          ? { scriptUrl: env.ANALYTICS_SCRIPT_URL, websiteId: env.ANALYTICS_WEBSITE_ID }
+          : null,
+    },
   });
 
   await app.register(fastifyCookie);
@@ -30,7 +38,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     prefix: "/",
   });
 
-  // Bundle de esbuild del editor visual (T3 de docs/slices/05.md), aparte de
+  // Bundle de esbuild del editor visual (T3 de docs/archive/v1/slices/05.md), aparte de
   // public/css/ para que el sitio público (invariante 3) nunca lo sirva ni
   // dependa de esta ruta. `decorateReply: false`: la primera instancia ya
   // agregó `reply.sendFile`, una segunda lo repetiría y @fastify/static tira.
@@ -40,7 +48,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     decorateReply: false,
   });
 
-  // Tercera instancia, apuntando a MEDIA_DIR (docs/slices/07.md §0): caché
+  // Tercera instancia, apuntando a MEDIA_DIR (docs/archive/v1/slices/07.md §0): caché
   // larga e immutable porque el nombre de archivo es estable para siempre —
   // volver a subir la misma foto crea una fila (y un id) nueva, nunca
   // reescribe un archivo ya publicado.
@@ -56,7 +64,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Los formularios del admin no llevan JS (invariante 3): se envían como
   // application/x-www-form-urlencoded, que Fastify no parsea por defecto.
   // Object.fromEntries perdería todos los valores salvo el último de un
-  // campo repetido (checkboxes de categorías, T4 de docs/slices/03.md), así
+  // campo repetido (checkboxes de categorías, T4 de docs/archive/v1/slices/03.md), así
   // que un campo repetido se agrupa en un array.
   app.addContentTypeParser("application/x-www-form-urlencoded", { parseAs: "string" }, (_request, body, done) => {
     try {

@@ -34,7 +34,7 @@ export function toMarkdown(doc: TiptapDoc): string {
   const normalized = normalizeTiptapDoc(doc);
   const root: Root = { type: "root", children: (normalized.content ?? []).map(blockToMdast) };
   const text = compiler.stringify(root).trimEnd();
-  // Un documento vacío (post recién creado, T5 de docs/slices/05.md) debe
+  // Un documento vacío (post recién creado, T5 de docs/archive/v1/slices/05.md) debe
   // volver a Markdown vacío, no a un salto de línea suelto.
   return text.length > 0 ? `${text}\n` : "";
 }

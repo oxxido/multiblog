@@ -13,7 +13,7 @@ test("párrafo sin marcas sobrevive el viaje completo", () => {
   assert.equal(toMarkdown(fromMarkdown(md)), md);
 });
 
-// Un post recién creado (T5 de docs/slices/05.md) arranca con body_md vacío;
+// Un post recién creado (T5 de docs/archive/v1/slices/05.md) arranca con body_md vacío;
 // el editor visual tiene que poder abrir ese documento sin contenido y
 // devolver Markdown vacío, no un salto de línea suelto.
 test("un cuerpo vacío sobrevive el viaje completo", () => {
