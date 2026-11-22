@@ -31,10 +31,13 @@ registrada en D29. Se controla con `ANALYTICS_SCRIPT_URL` y
 del sitio de Multiblog, así que el redeploy no necesita tocar el `.env` del
 VPS. Dev y tests no cargan el script. Test: `tests/acceptance/s12.test.ts`.
 
+En el mismo PR: la panorámica del post deja de ir en blanco y negro y se
+muestra en su color original (D30).
+
 Pendiente fuera del código:
 
-- **El usuario actualiza a mano el invariante 3 de `CLAUDE.md`** para
-  reflejar D29 (y, cuando toque, saca "comentarios" de WON'T DO).
+- Invariante 3 de `CLAUDE.md` ya actualizado por el usuario. Falta sacar
+  "comentarios" de WON'T DO cuando toque.
 - En Umami, el sitio debe aceptar el apex y todos los subdominios de
   `neurodivermente.com` (un solo `data-website-id` para todos los espacios).
 

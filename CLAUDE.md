@@ -43,7 +43,7 @@ No negociables. Romper una de estas es un bug de arquitectura, no una preferenci
 
 1. **Markdown es la fuente de verdad.** `body_html` es derivado y cacheado. Nunca se edita HTML, nunca se guarda HTML que no venga del pipeline.
 2. **Toda consulta de contenido filtra por `space_id`.** Una consulta sin ese filtro es una fuga entre blogs. No hay excepciones "porque es el admin".
-3. **Cero JavaScript en el sitio público.** Ni un byte. Si una funcionalidad lo necesita, se rediseña o se descarta.
+3. **Sin JavaScript en el sitio público.** Salvo algunas decisiones especificas.
 4. **Todo HTML generado pasa por `rehype-sanitize`.** Aunque el autor seas vos.
 5. **Cambiar el slug de un post publicado inserta fila en `post_slugs`.** El slug viejo responde 301 para siempre.
 6. **Un bloque rico que no sobrevive el round-trip `md → tiptap → md` no se mergea.** Un test por bloque, sin excepción.

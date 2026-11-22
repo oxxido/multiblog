@@ -19,9 +19,6 @@
   --sp-deep: color-mix(in oklab, var(--sp) 72%, #101110);
   --sp-line: color-mix(in oklab, var(--sp) 32%, #f2f2f3);
 
-  /* Sólo la panorámica del post va en blanco y negro (D24); las cabeceras
-     de espacio y central van a color. */
-  --ph: grayscale(1) contrast(1.08);
   --ph-gradient: linear-gradient(180deg, rgba(15, 16, 17, 0.12) 0%, rgba(15, 16, 17, 0.78) 100%);
 }
 
@@ -573,15 +570,14 @@ html:has(.canvas-page) {
   height: 248px;
   background: var(--color-page);
 }
-/* Sin foto: fondo papel. Con foto (S7): imagen a sangre en blanco y negro,
-   misma altura, sin texto encima (Design.md §3: "el recorte es libre") y
+/* Sin foto: fondo papel. Con foto (S7): imagen a sangre en su color
+   original (D30), misma altura, sin texto encima (Design.md §3: "el recorte es libre") y
    misma franja de --sp debajo. */
 .post-panorama__photo {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: var(--ph);
 }
 .post-panorama__rule {
   height: 5px;
