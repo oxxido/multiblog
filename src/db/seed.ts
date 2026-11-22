@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 import { db } from "./client.js";
 import { spaces, posts, users, siteSettings } from "./schema.js";
 import { hashPassword } from "../modules/auth/password.js";
@@ -63,14 +64,14 @@ const seedSpaces = [
 
 async function seed(): Promise<void> {
   for (const spaceSeed of seedSpaces) {
-    const [space] = await db
+    // El seed corre en cada arranque (D11): sólo crea lo que falta. Pisar
+    // filas existentes revertía ediciones del autor y, con un post
+    // despublicado, lo dejaba "published" sin published_at (D31).
+    await db
       .insert(spaces)
       .values({ slug: spaceSeed.slug, subdomain: spaceSeed.subdomain, name: spaceSeed.name })
-      .onConflictDoUpdate({
-        target: spaces.slug,
-        set: { subdomain: spaceSeed.subdomain, name: spaceSeed.name },
-      })
-      .returning();
+      .onConflictDoNothing({ target: spaces.slug });
+    const [space] = await db.select().from(spaces).where(eq(spaces.slug, spaceSeed.slug));
 
     if (!space) {
       throw new Error(`No se pudo sembrar el espacio ${spaceSeed.slug}`);
@@ -90,15 +91,7 @@ async function seed(): Promise<void> {
         status: "published",
         publishedAt: new Date(),
       })
-      .onConflictDoUpdate({
-        target: [posts.spaceId, posts.lang, posts.slug],
-        set: {
-          title: spaceSeed.post.title,
-          bodyMd: spaceSeed.post.bodyMd,
-          bodyHtml,
-          status: "published",
-        },
-      });
+      .onConflictDoNothing({ target: [posts.spaceId, posts.lang, posts.slug] });
   }
 
   await db
@@ -112,12 +105,8 @@ async function seed(): Promise<void> {
       set: { passwordHash: hashPassword(seedEnv.ADMIN_PASSWORD) },
     });
 
-  // A diferencia de espacios/usuario, esta fila no tiene contenido canónico
-  // que reconciliar en cada corrida: coverMediaId lo edita el admin desde
-  // /admin/sitio. onConflictDoUpdate con un `set` vacío tira ("No values to
-  // set"), y poner coverMediaId: null ahí lo borraría en cada redeploy
-  // (el CMD de la imagen corre este seed en cada arranque de `app`, D11). Sembrar
-  // una sola vez, sin tocarla si ya existe, es lo correcto acá.
+  // Igual que espacios y posts: coverMediaId lo edita el admin desde
+  // /admin/sitio, así que se siembra una sola vez.
   await db.insert(siteSettings).values({ id: 1, coverMediaId: null }).onConflictDoNothing({ target: siteSettings.id });
 }
 

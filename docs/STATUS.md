@@ -32,10 +32,15 @@ del sitio de Multiblog, así que el redeploy no necesita tocar el `.env` del
 VPS. Dev y tests no cargan el script. Test: `tests/acceptance/s12.test.ts`.
 
 En el mismo PR: la panorámica del post deja de ir en blanco y negro y se
-muestra en su color original (D30).
+muestra en su color original (D30). Y se corrige el seed, que en cada
+redeploy volvía a publicar sin fecha los posts sembrados que el autor había
+despublicado y tiraba 500 en las homes (D31).
 
 Pendiente fuera del código:
 
+- En producción, tras desplegar D31: reparar el post `hola` de `ideas`
+  (queda `published` sin fecha) despublicándolo y volviéndolo a publicar
+  desde el admin, o dejándolo despublicado.
 - Invariante 3 de `CLAUDE.md` ya actualizado por el usuario. Falta sacar
   "comentarios" de WON'T DO cuando toque.
 - En Umami, el sitio debe aceptar el apex y todos los subdominios de
