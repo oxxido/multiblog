@@ -60,6 +60,7 @@ a {
 img {
   display: block;
   max-width: 100%;
+  height: auto;
 }
 
 /* — marcos .blueprint: tarjetas de espacio y galería de post — */
